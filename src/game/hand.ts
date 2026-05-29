@@ -1,7 +1,7 @@
 import { Card, HandType, Rank } from "./types";
 
 export function getHandType(hand: Card[]): HandType {
-    if (hand.length === 2 && hand[0].rank === hand[1].rank) return HandType.Pair;
+    if (hand.length === 2 && getVal(hand[0].rank) == getVal(hand[1].rank)) return HandType.Pair;
     if (hand.some(card => card.rank === Rank.Ace)) return HandType.Soft; // At least one ace in the hand
     return HandType.Hard;
 }

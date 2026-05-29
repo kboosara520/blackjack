@@ -25,26 +25,32 @@ describe("getVal", () => {
 });
 
 describe("getHandType", () => {
-    let hardHand: Card[];
-    let softHand: Card[];
-    let pairHand: Card[];
 
-    beforeAll(() => {
-        hardHand = [card(Rank.Seven), card(Rank.Nine)];
-        softHand = [card(Rank.Five), card(Rank.Ace), card(Rank.Six)];
-        pairHand = [card(Rank.Eight), card(Rank.Eight)];
-    });
+    const cases: { name: string, hand: Card[], type: HandType }[] = [
+        {
+            name: "classifies a hard hand",
+            hand: [card(Rank.Seven), card(Rank.Nine)],
+            type: "hard"
+        },
+        {
+            name: "classifies a soft hand when an ace is present",
+            hand: [card(Rank.Five), card(Rank.Ace), card(Rank.Six)],
+            type: "soft"
+        },
+        {
+            name: "classifies a pair hand when two ranks match",
+            hand: [card(Rank.Eight), card(Rank.Eight)],
+            type: "pair"
+        },
+        {
+            name: "classifies 10s with different rank as a pair",
+            hand: [card(Rank.Jack), card(Rank.Queen)],
+            type: "pair"
+        }
+    ];
 
-    it("classifies a hard hand", () => {
-        expect(getHandType(hardHand)).toBe(HandType.Hard);
-    });
-
-    it("classifies a soft hand when an ace is present", () => {
-        expect(getHandType(softHand)).toBe(HandType.Soft);
-    });
-
-    it("classifies a pair hand when two ranks match", () => {
-        expect(getHandType(pairHand)).toBe(HandType.Pair);
+    it.each(cases)("$name", ({ hand, type }) => {
+        expect(getHandType(hand)).toEqual(type);
     });
 });
 

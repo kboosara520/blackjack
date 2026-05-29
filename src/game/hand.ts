@@ -1,4 +1,12 @@
-import { Card, HandType, Rank } from "./types";
+import { Card, Rank } from "./card";
+
+
+export const HandType = {
+    Hard: "hard",
+    Soft: "soft",
+    Pair: "pair",
+} as const;
+export type HandType = typeof HandType[keyof typeof HandType];
 
 export function getHandType(hand: Card[]): HandType {
     if (hand.length === 2 && getVal(hand[0].rank) == getVal(hand[1].rank)) return HandType.Pair;

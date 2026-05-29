@@ -1,10 +1,6 @@
 import { beforeAll, describe, expect, it } from '@jest/globals';
-import { getHandType, handTotal, getVal } from "./hand";
-import { Card, HandType, Rank } from "./types";
-
-function card(rank: Rank): Card {
-    return { rank };
-}
+import { getHandType, handTotal, getVal, HandType } from "./hand";
+import { card, Card, Rank } from './card';
 
 describe("getVal", () => {
     it("returns numeric values for numbered cards", () => {

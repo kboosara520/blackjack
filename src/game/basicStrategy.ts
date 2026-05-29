@@ -1,5 +1,18 @@
-import { getHandType, handTotal } from "./hand";
-import { Card, HandType, Move, StrategyTable } from "./types";
+import { Card, Rank } from "./card";
+import { getHandType, handTotal, HandType } from "./hand";
+
+export const Move = {
+    Hit: "H",
+    Stand: "S",
+    DoubleOrHit: "D",
+    DoubleOrStand: "Ds",
+    Split: "P",
+    Surrender: "Sur"
+} as const;
+export type Move = typeof Move[keyof typeof Move];
+
+// table[handType][handTotal][dealerCardFace] = correct move
+export type StrategyTable = Record<HandType, Record<string, Record<Rank, Move>>>;
 
 export function getMove(hand: Card[], dealerCard: Card, strategyTable: Readonly<StrategyTable>): Move {
     const handType = getHandType(hand);

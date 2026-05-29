@@ -1,10 +1,11 @@
 import { beforeAll, describe, expect, it } from '@jest/globals';
-import { getMove } from "./basicStrategy";
-import { HandType, Move, Rank, StrategyTable } from "./types";
+import { getMove, Move, StrategyTable } from "./basicStrategy";
 import { S17NoSurrenderCases } from "./testCases/S17NoSurrenderCases";
 import fs from "node:fs";
 import path from "node:path";
 import { S17WithSurrenderCases } from './testCases/S17WithSurrenderCases';
+import { HandType } from './hand';
+import { Rank } from './card';
 
 function loadStrategy(name: string): StrategyTable {
   const filePath = path.join(__dirname, "charts", `${name}.json`);

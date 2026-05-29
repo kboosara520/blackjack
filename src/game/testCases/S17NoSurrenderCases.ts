@@ -1,7 +1,8 @@
-import { Case, card } from "../testUtils";
-import { Move, Rank } from "../types";
+import { BasicStrategyTestCase } from "../testUtils";
+import { card, Rank } from "../card";
+import { Move } from "../basicStrategy";
 
-export const S17NoSurrenderCases: Case[] = [
+export const S17NoSurrenderCases: BasicStrategyTestCase[] = [
   {
     name: "hard 4 vs 2 → split",
     hand: [card(Rank.Two), card(Rank.Two)],

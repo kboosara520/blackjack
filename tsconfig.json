@@ -4,6 +4,7 @@
     "moduleResolution": "NodeNext",
     "types": ["node"],
     "target": "ES2020",
-    "isolatedModules": true
+    "isolatedModules": true,
+    "noImplicitOverride": true
   }
 }

@@ -65,23 +65,35 @@ describe("handTotal", () => {
         bustHand = [card(Rank.Jack), card(Rank.Queen), card(Rank.King), card(Rank.Ace)];
     });
 
-    it("calculates a hard total correctly", () => {
-        expect(handTotal(hardHand)).toBe(16);
-    });
+    const cases: { name: string, hand: Card[], value: number }[] = [
+        {
+            name: "calculates a hard total correctly", 
+            hand: [card(Rank.Seven), card(Rank.Nine)],
+            value: 16
+        },
+        {
+            name: "calculates a soft total with ace as 11",
+            hand: [card(Rank.Ace), card(Rank.Six)],
+            value: 17
+        },
+        {
+            name: "reduces multiple aces correctly to avoid busting",
+            hand: [card(Rank.Ace), card(Rank.Ace), card(Rank.Ace), card(Rank.Eight)],
+            value: 21
+        },
+        {
+            name: "calculates totals for a soft hand with more than two cards",
+            hand: [card(Rank.Ace), card(Rank.Seven), card(Rank.Two)],
+            value: 20
+        },
+        {
+            name: "calculates the total of a bust",
+            hand: [card(Rank.Jack), card(Rank.Queen), card(Rank.King), card(Rank.Ace)],
+            value: 31
+        }
+    ];
 
-    it("calculates a soft total with ace as 11", () => {
-        expect(handTotal(softHand)).toBe(17);
-    });
-
-    it("reduces multiple aces correctly to avoid busting", () => {
-        expect(handTotal(multiAceSoftHand)).toBe(21);
-    });
-
-    it("calculates totals for a soft hand with more than two cards", () => {
-        expect(handTotal(multiCardSoftHand)).toBe(20);
-    });
-
-    it("calculates the total of a bust", () => {
-        expect(handTotal(bustHand)).toBe(31);
+    it.each(cases)("$name", ({hand, value}) => {
+        expect(handTotal(hand)).toBe(value);
     });
 });

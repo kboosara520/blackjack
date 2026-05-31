@@ -26,9 +26,12 @@ export type Suit = typeof Suit[keyof typeof Suit];
 export type Card = {
     rank: Rank;
     suit: Suit;
+    faceUp: boolean;
 };
 
-export function card(rank: Rank, suit?: Suit): Card {
-    if (suit) return { rank: rank, suit: suit };
-    return { rank: rank, suit: Suit.Spades };
+export function card(rank: Rank, suit?: Suit, faceUp?: boolean): Card {
+    const card: Card = { rank: rank, suit: Suit.Spades, faceUp: true };
+    if (suit) card.suit = suit;
+    if (faceUp) card.faceUp = faceUp;
+    return card;
 }

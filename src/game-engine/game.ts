@@ -1,6 +1,9 @@
+import { Move } from "./basic-strategy";
 import { card, Card, Rank, Suit } from "./card";
 import { Dealer } from "./dealer";
+import { Hand } from "./hand";
 import { Player } from "./player";
+import { drawCard, initShoe } from "./shoe";
 
 export const GameMode = {
     Normal: "normal",
@@ -17,9 +20,8 @@ export type RuleSet = typeof RuleSet[keyof typeof RuleSet];
 export class Game {
     private gameMode: GameMode;
     private ruleSet: RuleSet;
-    private shoe: Card[] = [];
-    private discardedPile: Card[] = [];
     private readonly penetration: number;
+    private dealer: Dealer;
     private players: Player[] = [];
 
     constructor(
@@ -33,33 +35,43 @@ export class Game {
         this.ruleSet = ruleSet;
         this.penetration = penetration;
 
-        for (const rank of Object.values(Rank)) {
-            for (const suit of Object.values(Suit)) {
-                for (let i = 0; i < noOfDecks; i++) {
-                    this.shoe.push(card(rank, suit));
-                }
-            }
-        }
+        initShoe(noOfDecks, penetration);
+
+        this.dealer = new Dealer(this.ruleSet);
 
         // just for development
         for (let i = 0; i < noOfPlayers; i++) {
             const name: string = `Player ${i}`;
             this.players.push(new Player(name, 1000));
         }
-
-        this.shuffleShoe();
     }
 
-    public run(): void {
-        const dealer: Dealer = new Dealer(this.ruleSet);
+    public startRound(): void {
+        for (const player of this.players) {
+            player.makeBet();
+        }
+
+        // deal cards
+        this.dealOneForEachPlayer();
+        this.dealer.addCard(drawCard(true));
+        this.dealOneForEachPlayer();
+        this.dealer.addCard(drawCard(false));
+
+        for (const player of this.players) {
+            for (const [idx, hand] of player.getHands().entries()) {
+                while (hand.getIsActive()) {
+                    this.processMove(player, idx);
+                }
+            }
+        }
     }
 
-    private shuffleShoe() {
-        for (let i = this.shoe.length - 1; i >= 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            let tmp: Card = this.shoe[i];
-            this.shoe[i] = this.shoe[j];
-            this.shoe[j] = tmp;
+    // only use at the start
+    private dealOneForEachPlayer() {
+        let card: Card;
+        for (const player of this.players) {
+            card = drawCard(true);
+            player.getHands()[0].addCard(card);
         }
     }
 }

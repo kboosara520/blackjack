@@ -4,7 +4,8 @@ import { getHandType, handTotal, HandType } from "./hand";
 export const Move = {
     Hit: "H",
     Stand: "S",
-    DoubleOrHit: "D",
+    Double: "D",
+    DoubleOrHit: "Dh",
     DoubleOrStand: "Ds",
     Split: "P",
     Surrender: "Sur"

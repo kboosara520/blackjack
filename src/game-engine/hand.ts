@@ -1,6 +1,72 @@
 import { Card, Rank } from "./card";
 
 
+export class Hand {
+    private cards: Card[] = [];
+    private isActive: boolean = true;
+    private isDone: boolean = false;
+    private betSize: number = 0;
+
+    constructor(cards: Card[], betSize: number) {
+        this.cards = cards;
+        this.betSize = betSize;
+    }
+
+    public addCard(card: Card): void {
+        this.cards.push(card);
+    }
+
+    public getTotal(): number {
+        return handTotal(this.cards);
+    }
+
+    public getBetSize(): number {
+        return this.betSize;
+    }
+
+    public setBetSize(betSize: number) {
+        this.betSize = betSize;
+    }
+
+    public getIsActive(): boolean {
+        return this.isActive;
+    }
+
+    public setInactive() {
+        this.isActive = false;
+    }
+
+    public getIsDone(): boolean {
+        return this.isDone;
+    }
+
+    public setDone() {
+        this.setInactive();
+        this.isDone = true;
+    }
+
+    public getHandType(): HandType {
+        return getHandType(this.cards);
+    }
+
+    // only used when splitting
+    public removeOneCard(): Card {
+        const card: Card | undefined = this.cards.pop();
+        if (!card || this.cards.length != 1) {
+            throw new Error("Should not be called unless we are splitting the hand.");
+        }
+        return card;
+    }
+
+    public getCards(): Card[] {
+        return this.cards;
+    }
+
+    public setCards(cards: Card[]): void {
+        this.cards = cards;
+    }
+};
+
 export const HandType = {
     Hard: "hard",
     Soft: "soft",

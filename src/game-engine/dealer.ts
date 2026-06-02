@@ -1,4 +1,5 @@
 import { Move } from "./basic-strategy";
+import { Card } from "./card";
 import { RuleSet } from "./game";
 import { handTotal } from "./hand";
 import { Player } from "./player";
@@ -13,9 +14,13 @@ export class Dealer extends Player {
         this.ruleSet = ruleSet;
     }
 
+    public addCard(card: Card): void {
+        this.hands[0].addCard(card);
+    }
+
     public override makeMove(): Move {
         if (s17.has(this.ruleSet)) {
-            if (handTotal(this.hand) >= 17) {
+            if (this.hands[0].getTotal() >= 17) {
                 return "S";
             }
             return "H";

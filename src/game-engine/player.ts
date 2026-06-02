@@ -1,11 +1,10 @@
 import { Move } from "./basic-strategy";
 import { Card } from "./card";
+import { Hand } from "./hand";
 
 export class Player {
     public readonly name: string;
-    protected hand: Card[] = [];
-    private canHit: boolean = false;
-    private isActive: boolean = false;
+    protected hands: Hand[] = [];
     private chips: number;
 
     constructor(name: string, chips: number) {
@@ -13,8 +12,15 @@ export class Player {
         this.chips = chips;
     }
 
-    public addCard(card: Card) {
-        this.hand.push(card);
+    public getHand(handIdx: number) {
+        if (handIdx >= this.hands.length) {
+            throw new Error("Index out of bounds");
+        }
+        return this.hands[handIdx];
+    }
+
+    public getHands(): Hand[] {
+        return this.hands;
     }
 
     public makeMove(): Move {
@@ -22,8 +28,22 @@ export class Player {
         return "H"
     }
 
-    public makeBet(): number {
+    public makeBet(): void {
         // get input
-        return 0;
+        const betSize: number = 25;
+        this.chips -= betSize;
+        this.hands[0].setBetSize(betSize);
+    }
+
+    public isActive(): boolean {
+        return this.hands.some(hand => hand.getIsActive());
+    }
+
+    public getChips(): number {
+        return this.chips;
+    }
+
+    public setChips(chips: number): void {
+        this.chips = chips;
     }
 };

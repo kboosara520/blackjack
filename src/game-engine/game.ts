@@ -1,7 +1,7 @@
-import { Move } from "./basic-strategy";
 import { card, Card, Rank, Suit } from "./card";
 import { Dealer } from "./dealer";
 import { Hand } from "./hand";
+import { processHands } from "./hands-processor";
 import { Player } from "./player";
 import { drawCard, initShoe } from "./shoe";
 
@@ -46,7 +46,9 @@ export class Game {
         }
     }
 
-    public startRound(): void {
+    public playRound(): void {
+
+        // everyone bets
         for (const player of this.players) {
             player.makeBet();
         }
@@ -57,13 +59,18 @@ export class Game {
         this.dealOneForEachPlayer();
         this.dealer.addCard(drawCard(false));
 
+        // if the dealer has ace, check the other card for a blackjack
+        // check players for blackjacks
+
+        // players make moves
         for (const player of this.players) {
-            for (const [idx, hand] of player.getHands().entries()) {
-                while (hand.getIsActive()) {
-                    this.processMove(player, idx);
-                }
-            }
+            processHands(player);
         }
+        
+        // dealer makes moves
+        processHands(this.dealer);
+
+        // compare hand totals and pay winners
     }
 
     // only use at the start

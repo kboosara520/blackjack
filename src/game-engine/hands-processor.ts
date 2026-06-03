@@ -6,8 +6,20 @@ import { drawCard } from "./shoe";
 
 type MoveHandler = (player: Player, handIdx: number) => void;
 
-export function processMove(player: Player, handIdx: number): void {
-    const move: Move = player.makeMove()
+export function processHands(player: Player): void {
+    let i: number = 0;
+    const hands: Hand[] = player.getHands();
+    while (i < hands.length) {
+        const move: Move = player.makeMove();
+        processMove(player, i, move);
+        const hand: Hand = player.getHand(i);
+        if (!hand.getIsActive() || hand.getIsDone()) {
+            i++;
+        }
+    }
+}
+
+function processMove(player: Player, handIdx: number, move: Move): void {
     const handler: MoveHandler | undefined = moveHandlerMap.get(move);
     if (!handler) {
         throw new Error(`Invalid move ${move}.`);
@@ -26,9 +38,6 @@ const handleHit: MoveHandler = (player, handIdx) => {
     if (total > 21) {
         console.log(`${player.name} busts`);
         hand.setDone();
-    }
-    else if (total == 21) {
-        hand.setInactive();
     }
 }
 

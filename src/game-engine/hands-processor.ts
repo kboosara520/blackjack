@@ -1,4 +1,4 @@
-import { Move } from "./basic-strategy";
+import { Move } from "./hand";
 import { Card } from "./card";
 import { Hand, HandType } from "./hand";
 import { Player } from "./player";
@@ -54,8 +54,9 @@ const handleDouble: MoveHandler = (player, handIdx) => {
         throw new Error(`${player.name} does not have enough chips.`);
     }
 
-    player.setChips(player.getChips() - hand.getBetSize());
-    hand.setBetSize(hand.getBetSize() * 2);
+    // force player to make another bet equal to current bet
+    const bet: number = player.makeBet(hand.getBetSize());
+    hand.setBetSize(bet * 2);
 
     const card: Card = drawCard();
     hand.addCard(card);
@@ -80,10 +81,10 @@ const handleSplit: MoveHandler = (player, handIdx) => {
         throw new Error(`${player.name} does not have enough chips.`);
     }
 
-    player.setChips(player.getChips() - hand1.getBetSize());
+    const hand2Bet = player.makeBet(hand1.getBetSize());
 
     // take 1 card from hand1 and put into hand2
-    const hand2: Hand = new Hand([hand1.removeOneCard()], hand1.getBetSize());
+    const hand2: Hand = new Hand([hand1.removeOneCard()], hand2Bet);
     // insert hand2
     hands.splice(handIdx + 1, 0, hand2);
 

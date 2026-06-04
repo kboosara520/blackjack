@@ -1,6 +1,4 @@
-import { Move } from "./basic-strategy";
-import { Card } from "./card";
-import { Hand } from "./hand";
+import { Hand, Move } from "./hand";
 
 export class Player {
     public readonly name: string;
@@ -28,11 +26,26 @@ export class Player {
         return "H"
     }
 
-    public makeBet(): void {
+    // Provide input when doubling down or splitting
+    public makeBet(forcedBetSize?: number): number {
         // get input
-        const betSize: number = 25;
+        let betSize: number;
+        if (!forcedBetSize) {
+            betSize = 25;
+        }
+        else {
+            betSize = forcedBetSize;
+        }
+
+        if (betSize > this.chips) {
+            throw new Error(`${this.name} does not have enough chips`);
+        }
         this.chips -= betSize;
-        this.hands[0].setBetSize(betSize);
+        return betSize;
+    }
+
+    public winChips(payout: number): void {
+        this.chips += payout;
     }
 
     public isActive(): boolean {
@@ -43,7 +56,7 @@ export class Player {
         return this.chips;
     }
 
-    public setChips(chips: number): void {
-        this.chips = chips;
+    public emptyHands() {
+        this.hands = [];
     }
 };

@@ -5,11 +5,19 @@ describe("card builder", () => {
     it("builds a card", () => {
         const rank: Rank = "5";
         const suit: Suit = "hearts";
-        expect(card(rank, suit)).toStrictEqual({ rank: rank, suit: suit });
+        const isFaceUp: boolean = false;
+        expect(card(rank, suit, isFaceUp)).toStrictEqual({ rank: rank, suit: suit, isFaceUp: isFaceUp});
     });
 
-    it("defaults to spades when the suit isn't specified", () => {
+    it("sets the suit to spades when the suit isn't specified", () => {
         const rank: Rank = "K";
-        expect(card(rank)).toStrictEqual({ rank: rank, suit: Suit.Spades });
+        const isFaceUp: boolean = false;
+        expect(card(rank, undefined, isFaceUp).suit).toStrictEqual(Suit.Spades);
     });
+
+    it("sets the card to face up when not specified", () => {
+        const rank: Rank = "K";
+        const suit: Suit = "hearts";
+        expect(card(rank, suit).isFaceUp).toBe(true);
+    })
 });

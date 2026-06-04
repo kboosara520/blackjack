@@ -1,15 +1,15 @@
 import { beforeAll, describe, expect, it } from '@jest/globals';
-import { getMove, Move, StrategyTable } from "./basic-strategy";
+import { getMove, StrategyTable } from "./basic-strategy";
 import { S17NoSurrenderCases } from "./testCases/S17NoSurrenderCases";
 import fs from "node:fs";
 import path from "node:path";
 import { S17WithSurrenderCases } from './testCases/S17WithSurrenderCases';
-import { HandType } from './hand';
+import { Hand, HandType, Move } from './hand';
 import { Card, Rank } from './card';
 
 export type BasicStrategyTestCase = {
     name: string;
-    hand: Card[];
+    cards: Card[];
     dealerCard: Card;
     expected: Move;
 };
@@ -71,6 +71,8 @@ describe("Validate tables", () => {
 
     it("every move in every table is a valid move", () => {
         const validMoves = new Set(Object.values(Move));
+        // Double is only allowed when the game is happening
+        validMoves.delete(Move.Double);
         for (const table of tables) {
             for (const handType of Object.values(HandType)) {
                 const subtable = table[handType];
@@ -89,8 +91,8 @@ describe("S17 no surrender", () => {
         strategyTable = loadStrategy("S17NoSurrender");
     });
 
-    it.each(S17NoSurrenderCases)("$name", ({ hand, dealerCard, expected }) => {
-        expect(getMove(hand, dealerCard, strategyTable)).toEqual(expected);
+    it.each(S17NoSurrenderCases)("$name", ({ cards, dealerCard, expected }) => {
+        expect(getMove(new Hand(cards, 0), dealerCard, strategyTable)).toEqual(expected);
     });
 
     it("Has no surrenders", () => {
@@ -110,7 +112,7 @@ describe("S17 with surrender", () => {
         strategyTable = loadStrategy("S17WithSurrender");
     });
 
-    it.each(S17WithSurrenderCases)("$name", ({ hand, dealerCard, expected }) => {
-        expect(getMove(hand, dealerCard, strategyTable)).toEqual(expected);
+    it.each(S17WithSurrenderCases)("$name", ({ cards, dealerCard, expected }) => {
+        expect(getMove(new Hand(cards, 0), dealerCard, strategyTable)).toEqual(expected);
     });
 });

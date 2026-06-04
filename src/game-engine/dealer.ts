@@ -1,7 +1,6 @@
-import { Move } from "./basic-strategy";
 import { Card } from "./card";
 import { RuleSet } from "./game";
-import { handTotal } from "./hand";
+import { Move } from "./hand";
 import { Player } from "./player";
 
 const s17: Set<RuleSet> = new Set<RuleSet>([RuleSet.S17NoSurrrender, RuleSet.S17WithSurrender]);
@@ -12,6 +11,10 @@ export class Dealer extends Player {
     constructor(ruleSet: RuleSet) {
         super("Dealer", 0);
         this.ruleSet = ruleSet;
+    }
+
+    public getCard(idx: number): Card {
+        return this.hands[0].getCards()[idx];
     }
 
     public addCard(card: Card): void {

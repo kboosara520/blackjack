@@ -1,11 +1,32 @@
 import { Card, Rank } from "./card";
 
+export const HandType = {
+    Hard: "hard",
+    Soft: "soft",
+    Pair: "pair",
+} as const;
+export type HandType = typeof HandType[keyof typeof HandType];
+
+export const Move = {
+    Hit: "H",
+    Stand: "S",
+    Double: "D",
+    DoubleOrHit: "Dh",
+    DoubleOrStand: "Ds",
+    Split: "P",
+    Surrender: "Sur"
+} as const;
+export type Move = typeof Move[keyof typeof Move];
 
 export class Hand {
     private cards: Card[] = [];
-    private isActive: boolean = true;
-    private isDone: boolean = false;
     private betSize: number = 0;
+
+    // When a hand is inactive, the player can't make anymore moves for that hand, but the hand hasn't won or lost yet
+    private isActive: boolean = true;
+
+    // When a hand is done, it is over for the round, and whether the hand won or lost is determined
+    private isDone: boolean = false;
 
     constructor(cards: Card[], betSize: number) {
         this.cards = cards;
@@ -17,7 +38,18 @@ export class Hand {
     }
 
     public getTotal(): number {
-        return handTotal(this.cards);
+        let sum = 0;
+        let aceCount = 0;
+        for (const card of this.cards) {
+            if (card.rank === Rank.Ace) aceCount += 1;
+            sum += getVal(card.rank);
+        }
+        while (aceCount > 0) {
+            if (sum <= 21) break;
+            sum -= 10;
+            aceCount -= 1;
+        }
+        return sum;
     }
 
     public getBetSize(): number {
@@ -46,7 +78,9 @@ export class Hand {
     }
 
     public getHandType(): HandType {
-        return getHandType(this.cards);
+        if (this.cards.length === 2 && getVal(this.cards[0].rank) == getVal(this.cards[1].rank)) return HandType.Pair;
+        if (this.cards.some(card => card.rank === Rank.Ace)) return HandType.Soft; // At least one ace in the hand
+        return HandType.Hard;
     }
 
     // only used when splitting
@@ -67,36 +101,12 @@ export class Hand {
     }
 };
 
-export const HandType = {
-    Hard: "hard",
-    Soft: "soft",
-    Pair: "pair",
-} as const;
-export type HandType = typeof HandType[keyof typeof HandType];
-
-export function getHandType(hand: Card[]): HandType {
-    if (hand.length === 2 && getVal(hand[0].rank) == getVal(hand[1].rank)) return HandType.Pair;
-    if (hand.some(card => card.rank === Rank.Ace)) return HandType.Soft; // At least one ace in the hand
-    return HandType.Hard;
-}
-
-export function handTotal(hand: Card[]): number {
-    let sum = 0;
-    let aceCount = 0;
-    for (const card of hand) {
-        if (card.rank === Rank.Ace) aceCount += 1;
-        sum += getVal(card.rank);
-    }
-    while (aceCount > 0) {
-        if (sum <= 21) break;
-        sum -= 10;
-        aceCount -= 1;
-    }
-    return sum;
-}
-
 export function getVal(rank: Rank): number {
     if (rank === Rank.Jack || rank === Rank.Queen || rank === Rank.King) return 10;
     if (rank === Rank.Ace) return 11;
     return parseInt(rank, 10);
+}
+
+export function getCardVal(card: Card): number {
+    return getVal(card.rank);
 }

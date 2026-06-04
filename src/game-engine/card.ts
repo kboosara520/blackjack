@@ -31,7 +31,7 @@ export type Card = {
 
 export function card(rank: Rank, suit?: Suit, faceUp?: boolean): Card {
     const card: Card = { rank: rank, suit: Suit.Spades, isFaceUp: true };
-    if (suit) card.suit = suit;
-    if (faceUp) card.isFaceUp = faceUp;
+    if (suit !== undefined) card.suit = suit;
+    if (faceUp !== undefined) card.isFaceUp = faceUp;
     return card;
 }

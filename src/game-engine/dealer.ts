@@ -1,6 +1,7 @@
 import { Card } from "./card";
 import { RuleSet } from "./game";
 import { Move } from "./hand";
+import { InputSource } from "./input/input-provider";
 import { Player } from "./player";
 
 const s17: Set<RuleSet> = new Set<RuleSet>([RuleSet.S17NoSurrrender, RuleSet.S17WithSurrender]);
@@ -9,7 +10,7 @@ export class Dealer extends Player {
     private ruleSet: RuleSet;
 
     constructor(ruleSet: RuleSet) {
-        super("Dealer", 0);
+        super("Dealer", 0, InputSource.Mock);
         this.ruleSet = ruleSet;
     }
 
@@ -21,12 +22,12 @@ export class Dealer extends Player {
         this.hands[0].addCard(card);
     }
 
-    public override makeMove(): Move {
+    public override makeMove(): Promise<Move> {
         if (s17.has(this.ruleSet)) {
             if (this.hands[0].getTotal() >= 17) {
-                return "S";
+                return Promise.resolve(Move.Stand);
             }
-            return "H";
+            return Promise.resolve(Move.Hit);
         }
         throw new Error("dealer move error");
     }

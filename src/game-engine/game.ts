@@ -2,6 +2,7 @@ import { Card} from "./card";
 import { Dealer } from "./dealer";
 import { getCardVal, Hand } from "./hand";
 import { processHands } from "./hands-processor";
+import { InputSource } from "./input/input-provider";
 import { Player } from "./player";
 import { discard, drawCard, initShoe } from "./shoe";
 
@@ -42,11 +43,11 @@ export class Game {
         // just for development
         for (let i = 0; i < noOfPlayers; i++) {
             const name: string = `Player ${i}`;
-            this.players.push(new Player(name, 1000));
+            this.players.push(new Player(name, 1000, InputSource.Stdin));
         }
     }
 
-    public playRound(): void {
+    public async playRound(): Promise<void> {
 
         // everyone bets
         for (const player of this.players) {
@@ -80,7 +81,7 @@ export class Game {
         }
         
         // dealer makes moves
-        processHands(this.dealer);
+        await processHands(this.dealer);
 
         // compare hand totals and pay winners
         const dealerTotal: number = this.dealer.getHand(0).getTotal();

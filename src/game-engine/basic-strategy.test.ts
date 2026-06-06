@@ -1,9 +1,9 @@
 import { beforeAll, describe, expect, it } from '@jest/globals';
 import { getMove, StrategyTable } from "./basic-strategy";
-import { S17NoSurrenderCases } from "./testCases/S17NoSurrenderCases";
 import fs from "node:fs";
 import path from "node:path";
-import { S17WithSurrenderCases } from './testCases/S17WithSurrenderCases';
+import { S17NoSurrenderCases } from "./test-cases/s17-no-surrender-cases";
+import { S17WithSurrenderCases } from './test-cases/s17-with-surrender-cases';
 import { Hand, HandType, Move } from './hand';
 import { Card, Rank } from './card';
 

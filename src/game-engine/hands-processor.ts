@@ -6,11 +6,13 @@ import { drawCard } from "./shoe";
 
 type MoveHandler = (player: Player, handIdx: number) => void;
 
-export function processHands(player: Player): void {
+export async function processHands(player: Player): Promise<void> {
     let i: number = 0;
     const hands: Hand[] = player.getHands();
     while (i < hands.length) {
-        const move: Move = player.makeMove();
+        const allowedMoves: Set<Move> = new Set<Move>();
+        // populate allowedMoves
+        const move: Move = await player.makeMove(allowedMoves);
         processMove(player, i, move);
         const hand: Hand = player.getHand(i);
         if (!hand.getIsActive() || hand.getIsDone()) {

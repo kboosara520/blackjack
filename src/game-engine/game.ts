@@ -4,7 +4,7 @@ import { getCardVal, Hand } from "./hand";
 import { processHands } from "./hands-processor";
 import { InputSource } from "./input/input-provider";
 import { Player } from "./player";
-import { discard, drawCard, initShoe } from "./shoe";
+import { discard, drawCard, initShoe, revealCard } from "./shoe";
 
 export const GameMode = {
     Normal: "normal",
@@ -67,7 +67,7 @@ export class Game {
             if (this.dealer.getHand(0).getTotal() == 21) {
                 // reveal card
                 this.handleDealerBlackjack();
-                this.cleanup();
+                this.endRound();
                 return;
             }
         }
@@ -84,6 +84,8 @@ export class Game {
         await processHands(this.dealer);
 
         // compare hand totals and pay winners
+        const dealerHand: Hand = this.dealer.getHand(0);
+        revealCard(dealerHand.getCards()[1]);
         const dealerTotal: number = this.dealer.getHand(0).getTotal();
         console.log(`The dealer's total is ${dealerTotal}`);
 
@@ -94,7 +96,12 @@ export class Game {
             this.handleNormalCalculations(dealerTotal);
         }
 
-        this.cleanup();
+        this.endRound();
+    }
+
+    public cleanup(): void {
+        this.players.forEach((player) => player.cleanup());
+        this.dealer.cleanup();
     }
 
     // only use at the start
@@ -174,7 +181,7 @@ export class Game {
         }
     }
 
-    private cleanup() {
+    private endRound() {
         this.dealer.getHand(0).getCards().forEach((card) => discard(card));
         this.dealer.emptyHands();
         

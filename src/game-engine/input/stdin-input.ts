@@ -14,7 +14,7 @@ export class StdinInput {
         });
     }
 
-    public close() {
+    public cleanup(): void {
         this.rl.close();
     }
 }

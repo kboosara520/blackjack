@@ -3,6 +3,7 @@ import { Card } from "./card";
 import { Hand, HandType } from "./hand";
 import { Player } from "./player";
 import { drawCard } from "./shoe";
+import { Dealer } from "./dealer";
 
 type MoveHandler = (player: Player, handIdx: number) => void;
 

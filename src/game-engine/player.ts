@@ -8,7 +8,7 @@ export class Player {
     public readonly name: string;
     protected hands: Hand[] = [];
     private chips: number;
-    private inputSource: InputProvider;
+    private inputProvider: InputProvider;
 
     constructor(name: string, chips: number, inputSource: InputSource, filePath?: string) {
         this.name = name;
@@ -16,13 +16,13 @@ export class Player {
         switch(inputSource) {
             case InputSource.File:
                 if (!filePath) throw new Error("File path needed to use file input");
-                this.inputSource = new FileInput(filePath);
+                this.inputProvider = new FileInput(filePath);
 
             case InputSource.Stdin:
-                this.inputSource = new StdinInput();
+                this.inputProvider = new StdinInput();
 
             case InputSource.Mock:
-                this.inputSource = new MockInput();
+                this.inputProvider = new MockInput();
 
             default:
                 throw new Error("Invalid input source");
@@ -43,7 +43,7 @@ export class Player {
     public async makeMove(allowedMoves: Set<Move>): Promise<Move> {
         let move: string | null = "";
         while (!isAllowedMove(move, allowedMoves)) {
-            move = await this.inputSource.readLine("Make a move: ")
+            move = await this.inputProvider.readLine("Make a move: ")
             if (!move) throw new Error("Input is null likely because the file has ended");
         }
         return move;
@@ -81,6 +81,10 @@ export class Player {
 
     public emptyHands() {
         this.hands = [];
+    }
+
+    public cleanup() {
+        this.inputProvider.cleanup();
     }
 };
 

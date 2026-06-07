@@ -35,3 +35,7 @@ export function card(rank: Rank, suit?: Suit, faceUp?: boolean): Card {
     if (faceUp !== undefined) card.isFaceUp = faceUp;
     return card;
 }
+
+export function toString(card: Card) {
+    return `${card.rank} of ${card.suit}`;
+}

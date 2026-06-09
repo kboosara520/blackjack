@@ -1,22 +1,12 @@
-import { Card} from "./card";
+import { Card } from "./card";
 import { Dealer } from "./dealer";
+import { GameMode } from "./game-mode";
 import { getCardVal, Hand } from "./hand";
 import { processHands } from "./hands-processor";
-import { InputSource } from "./input/input-provider";
+import { InputSource } from "./input-source";
 import { Player } from "./player";
+import { RuleSet } from "./ruleset";
 import { discard, drawCard, initShoe, revealCard } from "./shoe";
-
-export const GameMode = {
-    Normal: "normal",
-    Practice: "practice"
-} as const;
-export type GameMode = typeof GameMode[keyof typeof GameMode];
-
-export const RuleSet = {
-    S17NoSurrrender: "s17NoSurrender",
-    S17WithSurrender: "s17WithSurrender"
-};
-export type RuleSet = typeof RuleSet[keyof typeof RuleSet];
 
 export class Game {
     private gameMode: GameMode;
@@ -195,3 +185,5 @@ export class Game {
         });
     }
 }
+
+export { RuleSet };

@@ -36,6 +36,6 @@ export function card(rank: Rank, suit?: Suit, faceUp?: boolean): Card {
     return card;
 }
 
-export function toString(card: Card) {
+export function cardToString(card: Card) {
     return `${card.rank} of ${card.suit}`;
 }

@@ -1,4 +1,4 @@
-import { Card, Rank } from "./card";
+import { Card, cardToString, Rank } from "./card";
 
 export const HandType = {
     Hard: "hard",
@@ -52,6 +52,10 @@ export class Hand {
         return sum;
     }
 
+    public length(): number {
+        return this.cards.length;
+    }
+
     public getBetSize(): number {
         return this.betSize;
     }
@@ -98,6 +102,15 @@ export class Hand {
 
     public setCards(cards: Card[]): void {
         this.cards = cards;
+    }
+
+    public toString(): string {
+        let str = "";
+        str += cardToString(this.cards[0]);
+        for (let i = 1; i < this.cards.length; i++) {
+            str += `, ${cardToString(this.cards[i])}`;
+        }
+        return str;
     }
 };
 

@@ -1,7 +1,8 @@
 import fs from "fs";
 import readline from "readline";
+import { IOManager } from "./io-manager";
 
-export class FileInput {
+export class FileIO implements IOManager {
     private iterator: AsyncIterator<string>;
 
     constructor(filePath: string) {
@@ -17,6 +18,10 @@ export class FileInput {
         const result = await this.iterator.next();
         return result.done ? null : result.value;
     }    
+
+    public output(str: string): void {
+        throw new Error("Not implemented")
+    }
 
     public cleanup(): void {} // do nothing for now
 }

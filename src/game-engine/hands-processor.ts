@@ -4,15 +4,20 @@ import { Hand, HandType } from "./hand";
 import { Player } from "./player";
 import { drawCard } from "./shoe";
 import { Dealer } from "./dealer";
+import { IOManager } from "./io-manager/io-manager";
+import { StdinIO } from "./io-manager/stdin-input";
 
 type MoveHandler = (player: Player, handIdx: number) => void;
+
+const ioManagaer: IOManager = new StdinIO();
 
 export async function processHands(player: Player): Promise<void> {
     let i: number = 0;
     const hands: Hand[] = player.getHands();
     while (i < hands.length) {
-        const allowedMoves: Set<Move> = new Set<Move>();
-        // populate allowedMoves
+        if (!hands[i].getIsActive()) continue;
+        ioManagaer.output(hands[i].toString());
+        const allowedMoves: Set<Move> = getAllowedMoves(player, hands[i]);
         const move: Move = await player.makeMove(allowedMoves);
         processMove(player, i, move);
         const hand: Hand = player.getHand(i);
@@ -28,6 +33,23 @@ function processMove(player: Player, handIdx: number, move: Move): void {
         throw new Error(`Invalid move ${move}.`);
     }
     handler(player, handIdx);
+}
+
+function getAllowedMoves(player: Player, hand: Hand): Set<Move> {
+    const allowedMoves: Set<Move> = new Set<Move>();
+    allowedMoves.add(Move.Hit);
+    allowedMoves.add(Move.Stand);
+    if (player instanceof Dealer) {
+        return allowedMoves;
+    }
+    // player
+    if (hand.length() == 2 && player.getChips() >= hand.getBetSize()) {
+        allowedMoves.add(Move.Double);
+        if (hand.getHandType() === HandType.Pair) {
+            allowedMoves.add(Move.Split);
+        }
+    }
+    return allowedMoves;
 }
 
 const handleHit: MoveHandler = (player, handIdx) => {

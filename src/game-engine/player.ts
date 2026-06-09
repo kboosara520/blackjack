@@ -1,14 +1,15 @@
 import { Hand, Move } from "./hand";
-import { FileInput } from "./input/file-input";
-import { InputProvider, InputSource } from "./input/input-provider";
-import { MockInput } from "./input/mock-input";
-import { StdinInput } from "./input/stdin-input";
+import { FileIO } from "./io-manager/file-input";
+import { IOManager } from "./io-manager/io-manager";
+import { MockIO } from "./io-manager/mock-input";
+import { StdinIO } from "./io-manager/stdin-input";
+import { InputSource } from "./input-source";
 
 export class Player {
     public readonly name: string;
     protected hands: Hand[] = [];
     private chips: number;
-    private inputProvider: InputProvider;
+    private ioManagaer: IOManager;
 
     constructor(name: string, chips: number, inputSource: InputSource, filePath?: string) {
         this.name = name;
@@ -16,15 +17,16 @@ export class Player {
         switch(inputSource) {
             case InputSource.File:
                 if (!filePath) throw new Error("File path needed to use file input");
-                this.inputProvider = new FileInput(filePath);
-
+                this.ioManagaer = new FileIO(filePath);
+                break;
             case InputSource.Stdin:
-                this.inputProvider = new StdinInput();
-
+                this.ioManagaer = new StdinIO();
+                break;
             case InputSource.Mock:
-                this.inputProvider = new MockInput();
-
+                this.ioManagaer = new MockIO();
+                break;
             default:
+                console.log(inputSource);
                 throw new Error("Invalid input source");
         }
     }
@@ -43,7 +45,7 @@ export class Player {
     public async makeMove(allowedMoves: Set<Move>): Promise<Move> {
         let move: string | null = "";
         while (!isAllowedMove(move, allowedMoves)) {
-            move = await this.inputProvider.readLine("Make a move: ")
+            move = await this.ioManagaer.readLine("Make a move: ")
             if (!move) throw new Error("Input is null likely because the file has ended");
         }
         return move;
@@ -84,10 +86,10 @@ export class Player {
     }
 
     public cleanup() {
-        this.inputProvider.cleanup();
+        this.ioManagaer.cleanup();
     }
 };
 
 function isAllowedMove(value: string, allowedMoves: Set<Move>): value is Move {
-  return Object.values(allowedMoves).includes(value as Move);
+  return allowedMoves.has(value as Move);
 }

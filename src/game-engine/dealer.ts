@@ -1,8 +1,8 @@
 import { Card } from "./card";
-import { RuleSet } from "./game";
-import { Move } from "./hand";
-import { InputSource } from "./input/input-provider";
+import { RuleSet } from "./ruleset";
+import { Hand, Move } from "./hand";
 import { Player } from "./player";
+import { InputSource } from "./input-source";
 
 const s17: Set<RuleSet> = new Set<RuleSet>([RuleSet.S17NoSurrrender, RuleSet.S17WithSurrender]);
 
@@ -12,6 +12,7 @@ export class Dealer extends Player {
     constructor(ruleSet: RuleSet) {
         super("Dealer", 0, InputSource.Mock);
         this.ruleSet = ruleSet;
+        this.hands.push(new Hand([], 0));
     }
 
     public getCard(idx: number): Card {
@@ -22,7 +23,7 @@ export class Dealer extends Player {
         this.hands[0].addCard(card);
     }
 
-    public override makeMove(): Promise<Move> {
+    public override makeMove(_: Set<Move>): Promise<Move> {
         if (s17.has(this.ruleSet)) {
             if (this.hands[0].getTotal() >= 17) {
                 return Promise.resolve(Move.Stand);

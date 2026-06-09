@@ -4,9 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "main": "npx tsx src/game-engine/integration/main.ts",
     "test": "jest",
     "test:coverage": "jest --coverage",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "cloc": "cloc --exclude-dir=charts,test-cases src"
   },
   "keywords": [],
   "author": "",
@@ -17,6 +19,7 @@
     "@types/node": "^25.9.1",
     "jest": "^30.4.2",
     "ts-jest": "^29.4.11",
+    "tsx": "^4.22.4",
     "typescript": "^6.0.3"
   }
 }

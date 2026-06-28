@@ -1,6 +1,6 @@
 import { BasicStrategyTestCase } from "../basic-strategy.test";
-import { card, Rank } from "../card";
-import { Move } from "../hand";
+import { card, Rank } from "../../types/card";
+import { Move } from "../../types/hand";
 
 export const S17WithSurrenderCases: BasicStrategyTestCase[] = [
   {

@@ -1,9 +1,9 @@
-import { Hand, Move } from "./hand";
-import { FileIO } from "./io-manager/file-input";
-import { IOManager } from "./io-manager/io-manager";
-import { MockIO } from "./io-manager/mock-input";
-import { StdinIO } from "./io-manager/stdin-input";
-import { InputSource } from "./input-source";
+import { Hand, Move } from "../types/hand";
+import { FileIO } from "../io-manager/file-input";
+import { IOManager } from "../io-manager/io-manager";
+import { MockIO } from "../io-manager/mock-input";
+import { StdIO } from "../io-manager/stdin-input";
+import { InputSource } from "../types/input-source";
 
 export class Player {
     public readonly name: string;
@@ -20,7 +20,7 @@ export class Player {
                 this.ioManagaer = new FileIO(filePath);
                 break;
             case InputSource.Stdin:
-                this.ioManagaer = new StdinIO();
+                this.ioManagaer = new StdIO();
                 break;
             case InputSource.Mock:
                 this.ioManagaer = new MockIO();
@@ -81,11 +81,11 @@ export class Player {
         return this.chips;
     }
 
-    public emptyHands() {
+    public emptyHands(): void {
         this.hands = [];
     }
 
-    public cleanup() {
+    public cleanup(): void {
         this.ioManagaer.cleanup();
     }
 };

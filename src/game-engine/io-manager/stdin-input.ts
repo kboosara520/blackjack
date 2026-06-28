@@ -1,15 +1,33 @@
 import readline from "readline";
 import { IOManager } from "./io-manager";
 
-export class StdinIO implements IOManager {
-    private rl = readline.createInterface({
-        input: process.stdin,
-        output: process.stdout,
-    });
+export class StdIO implements IOManager {
+    private static instance: StdIO | null = null;
+    private rl: readline.Interface | null = null;
+    private users: number = 0;
 
-    public async readLine(): Promise<string | null> {
-        return new Promise((resolve) => {
-            this.rl.question("", (answer) => {
+    constructor() {
+        if (StdIO.instance) {
+            return StdIO.instance;
+        }
+
+        this.rl = readline.createInterface({
+            input: process.stdin,
+            output: process.stdout,
+        });
+
+        StdIO.instance = this;
+        this.users += 1;
+    }
+
+    public async readLine(prompt: string): Promise<string | null> {
+        return new Promise((resolve, reject) => {
+            const rl = this.rl;
+            if (!rl) {
+                reject(new Error("rl is null"));
+                return;
+            }
+            rl.question(prompt, (answer) => {
                 resolve(answer);
             });
         });
@@ -20,6 +38,10 @@ export class StdinIO implements IOManager {
     }
 
     public cleanup(): void {
-        this.rl.close();
+        this.users -= 1;
+        if (this.rl && this.users == 0) {
+            this.rl.close();
+            console.log("Closed stdin");
+        }
     }
 }

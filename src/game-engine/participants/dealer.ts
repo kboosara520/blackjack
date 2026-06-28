@@ -1,8 +1,8 @@
-import { Card } from "./card";
-import { RuleSet } from "./ruleset";
-import { Hand, Move } from "./hand";
+import { Card } from "../types/card";
+import { RuleSet } from "../types/ruleset";
+import { Hand, Move } from "../types/hand";
 import { Player } from "./player";
-import { InputSource } from "./input-source";
+import { InputSource } from "../types/input-source";
 
 const s17: Set<RuleSet> = new Set<RuleSet>([RuleSet.S17NoSurrrender, RuleSet.S17WithSurrender]);
 
@@ -31,5 +31,10 @@ export class Dealer extends Player {
             return Promise.resolve(Move.Hit);
         }
         throw new Error("dealer move error");
+    }
+
+    public override emptyHands() {
+        super.emptyHands();
+        this.hands.push(new Hand([], 0));
     }
 };

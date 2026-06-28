@@ -14,7 +14,7 @@ export class FileIO implements IOManager {
         this.iterator = rl[Symbol.asyncIterator]();
     }
 
-    public async readLine(): Promise<string | null> {
+    public async readLine(prompt: string): Promise<string | null> {
         const result = await this.iterator.next();
         return result.done ? null : result.value;
     }    

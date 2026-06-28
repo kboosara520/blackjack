@@ -1,5 +1,5 @@
-import { Card, Rank } from "./card";
-import { Hand, HandType, Move } from "./hand";
+import { Card, Rank } from "../types/card";
+import { Hand, HandType, Move } from "../types/hand";
 
 // table[handType][handTotal][dealerCardFace] = correct move
 export type StrategyTable = Record<HandType, Record<string, Record<Rank, Move>>>;

@@ -4,8 +4,8 @@ import { beforeAll, describe, expect, it } from '@jest/globals';
 import { getMove, StrategyTable } from "./basic-strategy";
 import { S17NoSurrenderCases } from "./test-cases/s17-no-surrender-cases";
 import { S17WithSurrenderCases } from './test-cases/s17-with-surrender-cases';
-import { Hand, HandType, Move } from './hand';
-import { Card, Rank } from './card';
+import { Hand, HandType, Move } from '../types/hand';
+import { Card, Rank } from '../types/card';
 
 export type BasicStrategyTestCase = {
     name: string;

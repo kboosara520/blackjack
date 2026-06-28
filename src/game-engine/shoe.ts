@@ -1,5 +1,5 @@
-import { card, Card, Rank, Suit } from "./card";
-import { getCardVal } from "./hand";
+import { card, Card, Rank, Suit } from "./types/card";
+import { getCardVal } from "./types/hand";
 
 let shoe: Card[];
 let discardedPile: Card[] = [];

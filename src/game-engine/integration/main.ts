@@ -1,14 +1,12 @@
 import { Game } from "../game";
-import { GameMode } from "../game-mode";
-import { RuleSet } from "../ruleset";
+import { GameMode } from "../types/game-mode";
+import { RuleSet } from "../types/ruleset";
 
 const game: Game = new Game(GameMode.Normal, RuleSet.S17WithSurrender, 75, 1, 4);
 
 async function main() {
     try {
-        while (true) {
-            await game.playRound();
-        }
+        await game.playRound();
     }
     finally {
         game.cleanup();

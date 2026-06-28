@@ -1,22 +1,22 @@
-import { Move } from "./hand";
-import { Card } from "./card";
-import { Hand, HandType } from "./hand";
-import { Player } from "./player";
+import { Move } from "./types/hand";
+import { Card } from "./types/card";
+import { Hand, HandType } from "./types/hand";
+import { Player } from "./participants/player";
 import { drawCard } from "./shoe";
-import { Dealer } from "./dealer";
+import { Dealer } from "./participants/dealer";
 import { IOManager } from "./io-manager/io-manager";
-import { StdinIO } from "./io-manager/stdin-input";
+import { StdIO } from "./io-manager/stdin-input";
 
 type MoveHandler = (player: Player, handIdx: number) => void;
 
-const ioManagaer: IOManager = new StdinIO();
+const ioManager: IOManager = new StdIO();
 
 export async function processHands(player: Player): Promise<void> {
     let i: number = 0;
     const hands: Hand[] = player.getHands();
     while (i < hands.length) {
         if (!hands[i].getIsActive()) continue;
-        ioManagaer.output(hands[i].toString());
+        ioManager.output(`${player.name}'s hand: ${hands[i].toString()}`);
         const allowedMoves: Set<Move> = getAllowedMoves(player, hands[i]);
         const move: Move = await player.makeMove(allowedMoves);
         processMove(player, i, move);
@@ -33,6 +33,8 @@ function processMove(player: Player, handIdx: number, move: Move): void {
         throw new Error(`Invalid move ${move}.`);
     }
     handler(player, handIdx);
+    const hand: Hand = player.getHand(handIdx);
+    ioManager.output(`${player.name}'s hand: ${hand.toString()}`);
 }
 
 function getAllowedMoves(player: Player, hand: Hand): Set<Move> {

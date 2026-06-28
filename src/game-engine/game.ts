@@ -1,12 +1,16 @@
-import { Card } from "./card";
-import { Dealer } from "./dealer";
-import { GameMode } from "./game-mode";
-import { getCardVal, Hand } from "./hand";
+import { Card, cardToString } from "./types/card";
+import { Dealer } from "./participants/dealer";
+import { GameMode } from "./types/game-mode";
+import { getCardVal, Hand } from "./types/hand";
 import { processHands } from "./hands-processor";
-import { InputSource } from "./input-source";
-import { Player } from "./player";
-import { RuleSet } from "./ruleset";
+import { InputSource } from "./types/input-source";
+import { IOManager } from "./io-manager/io-manager";
+import { StdIO } from "./io-manager/stdin-input";
+import { Player } from "./participants/player";
+import { RuleSet } from "./types/ruleset";
 import { discard, drawCard, initShoe, revealCard } from "./shoe";
+
+const ioManager: IOManager = new StdIO();
 
 export class Game {
     private gameMode: GameMode;
@@ -51,6 +55,8 @@ export class Game {
         this.dealOneForEachPlayer();
         this.dealer.addCard(drawCard(false));
 
+        ioManager.output(`Dealer's first card: ${cardToString(this.dealer.getCard(0))}`);
+
         // if the dealer has ace, check the other card for a blackjack
         const dealerFirstCardVal: number = getCardVal(this.dealer.getCard(0));
         if (dealerFirstCardVal == 10 || dealerFirstCardVal == 11) {
@@ -67,7 +73,7 @@ export class Game {
 
         // players make moves
         for (const player of this.players) {
-            processHands(player);
+            await processHands(player);
         }
         
         // dealer makes moves
@@ -172,12 +178,12 @@ export class Game {
     }
 
     private endRound() {
-        this.dealer.getHand(0).getCards().forEach((card) => discard(card));
+        this.dealer.getHand(0).getCards().forEach((card: Card) => discard(card));
         this.dealer.emptyHands();
         
         this.players.forEach((player) => {
             player.getHands().forEach((hand) => {
-                hand.getCards().forEach((card) => {
+                hand.getCards().forEach((card: Card) => {
                     discard(card);
                 });
             });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from '@jest/globals';
-import { card, Rank, Suit } from './card';
+import { card, cardToString, Rank, Suit } from './card';
 
 describe("card builder", () => {
     it("builds a card", () => {
@@ -20,4 +20,10 @@ describe("card builder", () => {
         const suit: Suit = "hearts";
         expect(card(rank, suit).isFaceUp).toBe(true);
     })
+});
+
+describe("cardToString", () => {
+    it("returns a string representation of a card", () => {
+        expect(cardToString(card(Rank.King, Suit.Spades))).toEqual("K of spades");
+    });
 });

@@ -82,3 +82,64 @@ describe("handTotal", () => {
         expect(hand.getTotal()).toBe(value);
     });
 });
+
+describe("Hand state helpers", () => {
+    it("adds cards and tracks hand length", () => {
+        const hand = new Hand([], 10);
+
+        hand.addCard(card(Rank.Five));
+        hand.addCard(card(Rank.Ace));
+
+        expect(hand.length()).toBe(2);
+        expect(hand.getCards()).toHaveLength(2);
+    });
+
+    it("stores and updates the bet size", () => {
+        const hand = new Hand([], 10);
+
+        expect(hand.getBetSize()).toBe(10);
+
+        hand.setBetSize(25);
+
+        expect(hand.getBetSize()).toBe(25);
+    });
+
+    it("tracks active and done states", () => {
+        const hand = new Hand([], 0);
+
+        expect(hand.getIsActive()).toBe(true);
+        expect(hand.getIsDone()).toBe(false);
+
+        hand.setInactive();
+        expect(hand.getIsActive()).toBe(false);
+
+        hand.setDone();
+        expect(hand.getIsActive()).toBe(false);
+        expect(hand.getIsDone()).toBe(true);
+    });
+
+    it("removes one card when splitting", () => {
+        const hand = new Hand([card(Rank.Two), card(Rank.Three)], 0);
+
+        const removed = hand.removeOneCard();
+
+        expect(removed.rank).toBe(Rank.Three);
+        expect(hand.length()).toBe(1);
+    });
+
+    it("throws when removeOneCard is called in an invalid state", () => {
+        const hand = new Hand([card(Rank.Two)], 0);
+
+        expect(() => hand.removeOneCard()).toThrow("Should not be called unless we are splitting the hand.");
+    });
+
+    it("replaces cards and formats them as a string", () => {
+        const hand = new Hand([card(Rank.Ace)], 0);
+        const cards = [card(Rank.Two), card(Rank.Three)];
+
+        hand.setCards(cards);
+
+        expect(hand.getCards()).toEqual(cards);
+        expect(hand.toString()).toBe("2 of spades, 3 of spades");
+    });
+});

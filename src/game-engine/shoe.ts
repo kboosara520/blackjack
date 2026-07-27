@@ -1,14 +1,16 @@
 import { card, Card, Rank, Suit } from "./types/card";
 import { getCardVal } from "./types/hand";
 
-let shoe: Card[];
-let discardedPile: Card[] = [];
-let penetration: number;
-let runningCount: number = 0;
+export let shoe: Card[];
+export let discardedPile: Card[] = [];
+export let runningCount: number = 0;
+export let penetration: number;
+let numCardsBeforeReshuffle: number; // number of cards left before reshuffle
 
 export function initShoe(noOfDecks: number, penetrationInput: number): void {
     shoe = [];
     penetration = penetrationInput;
+    numCardsBeforeReshuffle = Math.round(noOfDecks * 52 * ((100 - penetration) / 100));
     for (const rank of Object.values(Rank)) {
         for (const suit of Object.values(Suit)) {
             for (let i = 0; i < noOfDecks; i++) {
@@ -21,7 +23,8 @@ export function initShoe(noOfDecks: number, penetrationInput: number): void {
 
 export function initShoeForTesting(cards: Card[]): void {
     runningCount = 0;
-    shoe = [];
+    discardedPile = [];
+    shoe = [...cards];
     for (const card of cards) {
         updateRunningCount(card);
     }
@@ -60,6 +63,14 @@ export function discard(card: Card): void {
     discardedPile.push(card);
 }
 
+export function checkForReshuffle(): void {
+    if (shoe.length < numCardsBeforeReshuffle) {
+        shoe = shoe.concat(discardedPile);
+        discardedPile = [];
+        shuffle();
+    }
+}
+
 function shuffle() {
     // reset runningCount
     runningCount = 0;
@@ -72,11 +83,7 @@ function shuffle() {
     }
 
     // burn first card
-    console.log("Burned first card");
-    const firstCard: Card | undefined = shoe.pop();
-    if (!firstCard) {
-        throw new Error("Shoe is empty after shuffling");
-    }
+    const firstCard: Card = shoe.pop()!;
     discard(firstCard);
 }
 

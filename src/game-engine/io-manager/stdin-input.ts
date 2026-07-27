@@ -41,7 +41,7 @@ export class StdIO implements IOManager {
         this.users -= 1;
         if (this.rl && this.users == 0) {
             this.rl.close();
-            console.log("Closed stdin");
+            // console.log("Closed stdin");
         }
     }
 }

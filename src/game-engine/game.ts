@@ -8,7 +8,7 @@ import { IOManager } from "./io-manager/io-manager";
 import { StdIO } from "./io-manager/stdin-input";
 import { Player } from "./participants/player";
 import { RuleSet } from "./types/ruleset";
-import { discard, drawCard, initShoe, revealCard } from "./shoe";
+import { checkForReshuffle, discard, drawCard, initShoe, revealCard } from "./shoe";
 
 const ioManager: IOManager = new StdIO();
 
@@ -48,6 +48,8 @@ export class Game {
             const betSize: number = player.makeBet();
             player.getHands().push(new Hand([], betSize));
         }
+
+        checkForReshuffle();
 
         // deal cards
         this.dealOneForEachPlayer();

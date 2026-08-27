@@ -23,7 +23,7 @@ export class Dealer extends Player {
         this.hands[0].addCard(card);
     }
 
-    public override makeMove(_: Set<Move>): Promise<Move> {
+    public override makeMove(_: number): Promise<Move> {
         if (s17.has(this.ruleSet)) {
             if (this.hands[0].getTotal() >= 17) {
                 return Promise.resolve(Move.Stand);

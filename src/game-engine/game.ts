@@ -45,8 +45,8 @@ export class Game {
 
         // everyone bets
         for (const player of this.players) {
-            const betSize: number = player.makeBet();
-            player.getHands().push(new Hand([], betSize));
+            const betSize: number = await player.makeBet();
+            player.newHand(betSize);
         }
 
         checkForReshuffle();

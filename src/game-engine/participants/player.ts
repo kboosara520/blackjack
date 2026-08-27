@@ -1,7 +1,6 @@
-import { Hand, Move } from "../types/hand";
+import { Hand, HandType, Move } from "../types/hand";
 import { FileIO } from "../io-manager/file-input";
 import { IOManager } from "../io-manager/io-manager";
-import { MockIO } from "../io-manager/mock-input";
 import { StdIO } from "../io-manager/stdin-input";
 import { InputSource } from "../types/input-source";
 
@@ -9,26 +8,38 @@ export class Player {
     public readonly name: string;
     protected hands: Hand[] = [];
     private chips: number;
-    private ioManagaer: IOManager;
+    private ioManager: IOManager;
 
-    constructor(name: string, chips: number, inputSource: InputSource, filePath?: string) {
+    constructor(
+        name: string, 
+        chips: number, 
+        inputSource: InputSource, 
+        filePath?: string,
+        mockIoManager?: IOManager
+    ) {
         this.name = name;
         this.chips = chips;
+
+        if (mockIoManager) {
+            this.ioManager = mockIoManager;
+            return;
+        }
+
         switch(inputSource) {
             case InputSource.File:
                 if (!filePath) throw new Error("File path needed to use file input");
-                this.ioManagaer = new FileIO(filePath);
+                this.ioManager = new FileIO(filePath);
                 break;
             case InputSource.Stdin:
-                this.ioManagaer = new StdIO();
-                break;
-            case InputSource.Mock:
-                this.ioManagaer = new MockIO();
+                this.ioManager = new StdIO();
                 break;
             default:
-                console.log(inputSource);
                 throw new Error("Invalid input source");
         }
+    }
+
+    public newHand(betSize: number): void {
+        this.hands.push(new Hand([], betSize));
     }
 
     public getHand(handIdx: number) {
@@ -42,21 +53,22 @@ export class Player {
         return this.hands;
     }
 
-    public async makeMove(allowedMoves: Set<Move>): Promise<Move> {
-        let move: string | null = "";
-        while (!isAllowedMove(move, allowedMoves)) {
-            move = await this.ioManagaer.readLine("Make a move: ")
-            if (!move) throw new Error("Input is null likely because the file has ended");
-        }
+    public async makeMove(handIdx: number): Promise<Move> {
+        let move: string | null = await this.ioManager.readLine("Make a move: ")
+        if (!move) throw new Error("Input is null likely because the file has ended");
+        if (!this.isAllowedMove(move, this.getHand(handIdx))) throw new Error(`Move ${move} is not allowed`);
         return move;
     }
 
     // Provide input when doubling down or splitting
-    public makeBet(forcedBetSize?: number): number {
+    public async makeBet(forcedBetSize?: number): Promise<number> {
         // get input
         let betSize: number;
         if (!forcedBetSize) {
-            betSize = 25;
+            const input: string | null = await this.ioManager.readLine("Make a bet: ")
+            if (!input) throw new Error("Input is null likely because the file has ended");
+            betSize = Number(input);
+            if (Number.isNaN(betSize)) throw new Error("Not a number");
         }
         else {
             betSize = forcedBetSize;
@@ -67,6 +79,24 @@ export class Player {
         }
         this.chips -= betSize;
         return betSize;
+    }
+
+    private isAllowedMove(value: string, hand: Hand): value is Move{
+        const allowedMoves = this.getAllowedMoves(hand);
+        return allowedMoves.has(value as Move);
+    }
+
+    private getAllowedMoves(hand: Hand): Set<Move> {
+        const allowedMoves: Set<Move> = new Set<Move>();
+        allowedMoves.add(Move.Hit);
+        allowedMoves.add(Move.Stand);
+        if (hand.length() == 2 && this.getChips() >= hand.getBetSize()) {
+            allowedMoves.add(Move.Double);
+            if (hand.getHandType() === HandType.Pair) {
+                allowedMoves.add(Move.Split);
+            }
+        }
+        return allowedMoves;
     }
 
     public winChips(payout: number): void {
@@ -86,10 +116,6 @@ export class Player {
     }
 
     public cleanup(): void {
-        this.ioManagaer.cleanup();
+        this.ioManager.cleanup();
     }
 };
-
-function isAllowedMove(value: string, allowedMoves: Set<Move>): value is Move {
-  return allowedMoves.has(value as Move);
-}

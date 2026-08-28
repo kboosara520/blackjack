@@ -1,61 +1,22 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { Player } from './player';
-import { InputSource } from '../types/input-source';
 import { Hand } from '../types/hand';
 import { IOManager } from '../io-manager/io-manager';
 import { card, Rank } from '../types/card';
-import { FileIO } from '../io-manager/file-input';
-import { StdIO } from '../io-manager/stdin-input';
-
-jest.mock('../io-manager/file-input', () => ({
-    FileIO: jest.fn().mockImplementation(() => ({
-        readLine: jest.fn(),
-        cleanup: jest.fn(),
-    })),
-}));
-
-jest.mock('../io-manager/stdin-input', () => ({
-    StdIO: jest.fn().mockImplementation(() => ({
-        readLine: jest.fn(),
-        cleanup: jest.fn(),
-    })),
-}));
 
 describe('player', () => {
     let player: Player;
-    const startingChips: number = 600
+    const startingChips: number = 600;
 
     const mockIO: IOManager = {
-        readLine: jest.fn<() => Promise<string>>().mockResolvedValue('H'),
+        readLine: jest.fn<() => Promise<string | null>>(),
+        output: jest.fn<() => Promise<void>>(),
         cleanup: jest.fn(),
-    } as any; // as any to disable type check since this is just a mock
+    };
 
     beforeEach(() => {
-        player = new Player('test', startingChips, '', '', mockIO);
-    });
-
-    describe('Player constructor', () => {
-        it('uses FileIO when inputSource is File', () => {
-            const player = new Player('test', startingChips, InputSource.File, '/tmp/test.txt');
-            expect(FileIO).toHaveBeenCalledWith('/tmp/test.txt');
-            expect((player as any).ioManager).toBeDefined();
-        });
-
-        it('uses StdIO when inputSource is Stdin', () => {
-            const player = new Player('test', startingChips, InputSource.Stdin);
-            expect(StdIO).toHaveBeenCalledWith();
-            expect((player as any).ioManager).toBeDefined();
-        });
-
-        it('throws when file input is requested without a file path', () => {
-            expect(() => new Player('test', startingChips, InputSource.File))
-                .toThrow('File path needed to use file input');
-        });
-
-        it('throws when an unknown input source is provided', () => {
-            expect(() => new Player('test', startingChips, 'unknown'))
-                .toThrow('Invalid input source');
-        });
+        mockIO.readLine = jest.fn<() => Promise<string | null>>().mockResolvedValue('H');
+        player = new Player('test', startingChips, mockIO);
     });
 
     it('can get all hands', () => {
@@ -132,7 +93,7 @@ describe('player', () => {
         });
 
         it('does not allow double when the player does not have enough chips', async () => {
-            player = new Player('test', startingChips - 1, '', '', mockIO);
+            player = new Player('test', startingChips - 1, mockIO);
             player.newHand(startingChips);
             player.getHand(0).addCard(card(Rank.Six));
             player.getHand(0).addCard(card(Rank.Four));
@@ -216,11 +177,6 @@ describe('player', () => {
             expect(await player.makeBet(forcedBetSize)).toEqual(forcedBetSize);
             expect(player.getChips()).toEqual(startingChips - forcedBetSize);
         });
-    });
-
-    it('cleans up properly', () => {
-        player.cleanup();
-        expect(mockIO.cleanup).toHaveBeenCalled();
     });
 
     it('checks if the player is active', () => {

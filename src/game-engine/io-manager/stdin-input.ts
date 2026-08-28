@@ -8,6 +8,7 @@ export class StdIO implements IOManager {
 
     constructor() {
         if (StdIO.instance) {
+            StdIO.instance.users += 1;
             return StdIO.instance;
         }
 
@@ -33,7 +34,7 @@ export class StdIO implements IOManager {
         });
     }
 
-    public output(str: string): void {
+    public async output(str: string): Promise<void> {
         console.log(str);
     }
 
@@ -41,6 +42,7 @@ export class StdIO implements IOManager {
         this.users -= 1;
         if (this.rl && this.users == 0) {
             this.rl.close();
+            StdIO.instance = null;
             // console.log("Closed stdin");
         }
     }

@@ -1,8 +1,5 @@
 import { Hand, HandType, Move } from "../types/hand";
-import { FileIO } from "../io-manager/file-input";
 import { IOManager } from "../io-manager/io-manager";
-import { StdIO } from "../io-manager/stdin-input";
-import { InputSource } from "../types/input-source";
 
 export class Player {
     public readonly name: string;
@@ -13,29 +10,11 @@ export class Player {
     constructor(
         name: string, 
         chips: number, 
-        inputSource: InputSource, 
-        filePath?: string,
-        mockIoManager?: IOManager
+        ioManager: IOManager,
     ) {
         this.name = name;
         this.chips = chips;
-
-        if (mockIoManager) {
-            this.ioManager = mockIoManager;
-            return;
-        }
-
-        switch(inputSource) {
-            case InputSource.File:
-                if (!filePath) throw new Error("File path needed to use file input");
-                this.ioManager = new FileIO(filePath);
-                break;
-            case InputSource.Stdin:
-                this.ioManager = new StdIO();
-                break;
-            default:
-                throw new Error("Invalid input source");
-        }
+        this.ioManager = ioManager;
     }
 
     public newHand(betSize: number): void {
@@ -113,9 +92,5 @@ export class Player {
 
     public emptyHands(): void {
         this.hands = [];
-    }
-
-    public cleanup(): void {
-        this.ioManager.cleanup();
     }
 };

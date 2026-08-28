@@ -3,14 +3,10 @@ import { Dealer } from "./participants/dealer";
 import { GameMode } from "./types/game-mode";
 import { getCardVal, Hand } from "./types/hand";
 import { processHands } from "./hands-processor";
-import { InputSource } from "./types/input-source";
 import { IOManager } from "./io-manager/io-manager";
-import { StdIO } from "./io-manager/stdin-input";
 import { Player } from "./participants/player";
 import { RuleSet } from "./types/ruleset";
 import { checkForReshuffle, discard, drawCard, initShoe, revealCard } from "./shoe";
-
-const ioManager: IOManager = new StdIO();
 
 export class Game {
     private gameMode: GameMode;
@@ -18,17 +14,20 @@ export class Game {
     private readonly penetration: number;
     private dealer: Dealer;
     private players: Player[] = [];
+    private ioManager: IOManager;
 
     constructor(
         gameMode: GameMode, 
         ruleSet: RuleSet, 
         penetration: number,
         noOfPlayers: number, 
-        noOfDecks: number
+        noOfDecks: number,
+        ioManager: IOManager
     ) {
         this.gameMode = gameMode;
         this.ruleSet = ruleSet;
         this.penetration = penetration;
+        this.ioManager = ioManager;
 
         initShoe(noOfDecks, penetration);
 
@@ -37,7 +36,7 @@ export class Game {
         // just for development
         for (let i = 0; i < noOfPlayers; i++) {
             const name: string = `Player ${i}`;
-            this.players.push(new Player(name, 1000, InputSource.Stdin));
+            this.players.push(new Player(name, 1000, ioManager));
         }
     }
 
@@ -57,7 +56,7 @@ export class Game {
         this.dealOneForEachPlayer();
         this.dealer.addCard(drawCard(false));
 
-        ioManager.output(`Dealer's first card: ${cardToString(this.dealer.getCard(0))}`);
+        await this.ioManager.output(`Dealer's first card: ${cardToString(this.dealer.getCard(0))}`);
 
         // if the dealer has ace, check the other card for a blackjack
         const dealerFirstCardVal: number = getCardVal(this.dealer.getCard(0));
@@ -75,11 +74,11 @@ export class Game {
 
         // players make moves
         for (const player of this.players) {
-            await processHands(player);
+            await processHands(player, this.ioManager);
         }
         
         // dealer makes moves
-        await processHands(this.dealer);
+        await processHands(this.dealer, this.ioManager);
 
         // compare hand totals and pay winners
         const dealerHand: Hand = this.dealer.getHand(0);
@@ -95,11 +94,6 @@ export class Game {
         }
 
         this.endRound();
-    }
-
-    public cleanup(): void {
-        this.players.forEach((player) => player.cleanup());
-        this.dealer.cleanup();
     }
 
     // only use at the start

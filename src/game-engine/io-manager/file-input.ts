@@ -19,7 +19,7 @@ export class FileIO implements IOManager {
         return result.done ? null : result.value;
     }    
 
-    public output(str: string): void {
+    public async output(str: string): Promise<void> {
         throw new Error("Not implemented")
     }
 

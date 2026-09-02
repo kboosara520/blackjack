@@ -5,8 +5,8 @@
   "main": "index.js",
   "scripts": {
     "main": "npx tsx src/game-engine/integration/main.ts",
-    "test": "jest",
-    "test:coverage": "jest --coverage",
+    "test": "jest --runInBand --verbose",
+    "test:coverage": "jest --runInBand --verbose --coverage",
     "typecheck": "tsc --noEmit",
     "cloc": "cloc --exclude-dir=charts,test-cases src"
   },

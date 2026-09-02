@@ -63,14 +63,14 @@ export class Game {
         if (dealerFirstCardVal == 10 || dealerFirstCardVal == 11) {
             if (this.dealer.getHand(0).getTotal() == 21) {
                 // reveal card
-                this.handleDealerBlackjack();
+                await this.handleDealerBlackjack();
                 this.endRound();
                 return;
             }
         }
 
         // check players for blackjacks
-        this.checkForBlackjacks();
+        await this.checkForBlackjacks();
 
         // players make moves
         for (const player of this.players) {
@@ -84,13 +84,13 @@ export class Game {
         const dealerHand: Hand = this.dealer.getHand(0);
         revealCard(dealerHand.getCards()[1]);
         const dealerTotal: number = this.dealer.getHand(0).getTotal();
-        console.log(`The dealer's total is ${dealerTotal}`);
+        await this.ioManager.output(`The dealer's total is ${dealerTotal}`);
 
         if (dealerTotal > 21) {
-            this.handleDealerBust();
+            await this.handleDealerBust();
         }
         else {
-            this.handleNormalCalculations(dealerTotal);
+            await this.handleNormalCalculations(dealerTotal);
         }
 
         this.endRound();
@@ -105,28 +105,28 @@ export class Game {
         }
     }
 
-    private handleDealerBlackjack(): void {
+    private async handleDealerBlackjack(): Promise<void> {
         for (const player of this.players) {
             const hand: Hand = player.getHand(0);
             if (player.getHand(0).getTotal() == 21) {
                 const betSize: number = hand.getBetSize();
-                console.log(`The dealer pushes ${player.name}'s blackjack`);
+                await this.ioManager.output(`The dealer pushes ${player.name}'s blackjack`);
                 player.winChips(betSize);
             }
             else {
-                console.log(`${player.name} loses`);
+                await this.ioManager.output(`${player.name} loses`);
             }
             hand.setDone();
         }
     }
 
-    private checkForBlackjacks(): void {
+    private async checkForBlackjacks(): Promise<void> {
         for (const player of this.players) {
             const hand: Hand = player.getHand(0);
             if (player.getHand(0).getTotal() == 21) {
                 const betSize: number = hand.getBetSize();
                 // blackjack pays 3:2
-                console.log(`${player.name} gets a blackjack and wins ${betSize * 1.5}`);
+                await this.ioManager.output(`${player.name} gets a blackjack and wins ${betSize * 1.5}`);
                 // 1 from the inital bet, 1.5 from 3:2 payout
                 player.winChips(betSize * 2.5);
                 hand.setDone();
@@ -134,21 +134,21 @@ export class Game {
         }
     }
 
-    private handleDealerBust(): void {
-        console.log("The dealer busts");
+    private async handleDealerBust(): Promise<void> {
+        await this.ioManager.output("The dealer busts");
         for (const player of this.players) {
             const hands: Hand[] = player.getHands();
             for (const hand of hands) {
                 if (hand.getIsDone()) continue;
                 // if the hand is still in the game, the hand wins
-                console.log(`${player.name} wins ${hand.getBetSize()}`);
+                await this.ioManager.output(`${player.name} wins ${hand.getBetSize()}`);
                 player.winChips(hand.getBetSize() * 2);
                 hand.setDone();
             }
         }
     }
 
-    private handleNormalCalculations(dealerTotal: number) {
+    private async handleNormalCalculations(dealerTotal: number): Promise<void> {
         for (const player of this.players) {
             const hands: Hand[] = player.getHands();
             for (const [idx, hand] of hands.entries()) {
@@ -158,15 +158,15 @@ export class Game {
                 const betSize: number = hand.getBetSize();
                 const playerNameHandNo: string = `${player.name}'s hand ${idx + 1}`;
                 if (handTotal > dealerTotal) {
-                    console.log(`${playerNameHandNo} wins ${hand.getBetSize()}`);
+                    await this.ioManager.output(`${playerNameHandNo} wins ${hand.getBetSize()}`);
                     player.winChips(betSize * 2);
                 }
                 else if (handTotal == dealerTotal) {
-                    console.log(`The dealer pushes ${playerNameHandNo}`);
+                    await this.ioManager.output(`The dealer pushes ${playerNameHandNo}`);
                     player.winChips(betSize);
                 }
                 else {
-                    console.log(`${playerNameHandNo} loses`);
+                    await this.ioManager.output(`${playerNameHandNo} loses`);
                 }
                 hand.setDone();
             }

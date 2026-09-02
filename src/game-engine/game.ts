@@ -6,7 +6,7 @@ import { processHands } from "./hands-processor";
 import { IOManager } from "./io-manager/io-manager";
 import { Player } from "./participants/player";
 import { RuleSet } from "./types/ruleset";
-import { checkForReshuffle, discard, drawCard, initShoe, revealCard } from "./shoe";
+import { Shoe } from "./shoe";
 
 export class Game {
     private gameMode: GameMode;
@@ -14,30 +14,26 @@ export class Game {
     private readonly penetration: number;
     private dealer: Dealer;
     private players: Player[] = [];
+    private shoe: Shoe;
     private ioManager: IOManager;
 
     constructor(
         gameMode: GameMode, 
         ruleSet: RuleSet, 
         penetration: number,
-        noOfPlayers: number, 
+        players: Player[], 
         noOfDecks: number,
         ioManager: IOManager
     ) {
         this.gameMode = gameMode;
         this.ruleSet = ruleSet;
         this.penetration = penetration;
+        this.players = players;
         this.ioManager = ioManager;
 
-        initShoe(noOfDecks, penetration);
+        this.shoe = new Shoe(noOfDecks, penetration);
 
         this.dealer = new Dealer(this.ruleSet);
-
-        // just for development
-        for (let i = 0; i < noOfPlayers; i++) {
-            const name: string = `Player ${i}`;
-            this.players.push(new Player(name, 1000, ioManager));
-        }
     }
 
     public async playRound(): Promise<void> {
@@ -48,13 +44,13 @@ export class Game {
             player.newHand(betSize);
         }
 
-        checkForReshuffle();
+        this.shoe.checkForReshuffle();
 
         // deal cards
         this.dealOneForEachPlayer();
-        this.dealer.addCard(drawCard(true));
+        this.dealer.addCard(this.shoe.drawCard(true));
         this.dealOneForEachPlayer();
-        this.dealer.addCard(drawCard(false));
+        this.dealer.addCard(this.shoe.drawCard(false));
 
         await this.ioManager.output(`Dealer's first card: ${cardToString(this.dealer.getCard(0))}`);
 
@@ -74,15 +70,15 @@ export class Game {
 
         // players make moves
         for (const player of this.players) {
-            await processHands(player, this.ioManager);
+            await processHands(player, this.shoe, this.ioManager);
         }
         
         // dealer makes moves
-        await processHands(this.dealer, this.ioManager);
+        await processHands(this.dealer, this.shoe, this.ioManager);
 
         // compare hand totals and pay winners
         const dealerHand: Hand = this.dealer.getHand(0);
-        revealCard(dealerHand.getCards()[1]);
+        this.revealCard(dealerHand.getCards()[1]);
         const dealerTotal: number = this.dealer.getHand(0).getTotal();
         await this.ioManager.output(`The dealer's total is ${dealerTotal}`);
 
@@ -100,7 +96,7 @@ export class Game {
     private dealOneForEachPlayer(): void {
         let card: Card;
         for (const player of this.players) {
-            card = drawCard(true);
+            card = this.shoe.drawCard(true);
             player.getHands()[0].addCard(card);
         }
     }
@@ -173,14 +169,22 @@ export class Game {
         }
     }
 
+    private revealCard(card: Card) {
+        if (card.isFaceUp == true) {
+            throw new Error("Cannot reveal card that is already face up");
+        }
+        card.isFaceUp = true;
+        this.shoe.updateRunningCount(card);
+    }
+
     private endRound() {
-        this.dealer.getHand(0).getCards().forEach((card: Card) => discard(card));
+        this.dealer.getHand(0).getCards().forEach((card: Card) => this.shoe.discard(card));
         this.dealer.emptyHands();
         
         this.players.forEach((player) => {
             player.getHands().forEach((hand) => {
                 hand.getCards().forEach((card: Card) => {
-                    discard(card);
+                    this.shoe.discard(card);
                 });
             });
             player.emptyHands();

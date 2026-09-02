@@ -2,19 +2,19 @@ import { Move } from "./types/hand";
 import { Card } from "./types/card";
 import { Hand, HandType } from "./types/hand";
 import { Player } from "./participants/player";
-import { drawCard } from "./shoe";
+import { Shoe } from "./shoe";
 import { IOManager } from "./io-manager/io-manager";
 
-type MoveHandler = (player: Player, handIdx: number, ioManager: IOManager) => Promise<void>;
+type MoveHandler = (player: Player, handIdx: number, shoe: Shoe, ioManager: IOManager) => Promise<void>;
 
-export async function processHands(player: Player, ioManager: IOManager): Promise<void> {
+export async function processHands(player: Player, shoe: Shoe, ioManager: IOManager): Promise<void> {
     let i: number = 0;
     const hands: Hand[] = player.getHands();
     while (i < hands.length) {
         if (!hands[i].getIsActive()) continue;
         await ioManager.output(`${player.name}'s hand: ${hands[i].toString()}`);
         const move: Move = await player.makeMove(i);
-        await processMove(player, i, move, ioManager);
+        await processMove(player, i, move, shoe, ioManager);
         const hand: Hand = player.getHand(i);
         if (!hand.getIsActive() || hand.getIsDone()) {
             i++;
@@ -26,22 +26,23 @@ async function processMove(
     player: Player,
     handIdx: number,
     move: Move,
+    shoe: Shoe,
     ioManager: IOManager,
 ): Promise<void> {
     const handler: MoveHandler | undefined = moveHandlerMap.get(move);
     if (!handler) {
         throw new Error(`Invalid move ${move}.`);
     }
-    await handler(player, handIdx, ioManager);
+    await handler(player, handIdx, shoe, ioManager);
     const hand: Hand = player.getHand(handIdx);
     await ioManager.output(`${player.name}'s hand: ${hand.toString()}`);
 }
 
-const handleHit: MoveHandler = async (player, handIdx, ioManager) => {
+const handleHit: MoveHandler = async (player, handIdx, shoe, ioManager) => {
     await ioManager.output(`${player.name} hits.`);
 
     const hand: Hand = player.getHand(handIdx);
-    const card: Card = drawCard();
+    const card: Card = shoe.drawCard();
     hand.addCard(card);
 
     const total: number = hand.getTotal();
@@ -51,12 +52,12 @@ const handleHit: MoveHandler = async (player, handIdx, ioManager) => {
     }
 }
 
-const handleStand: MoveHandler = async (player, handIdx, ioManager) => {
+const handleStand: MoveHandler = async (player, handIdx, shoe, ioManager) => {
     await ioManager.output(`${player.name} stands.`);
     player.getHand(handIdx).setInactive();
 }
 
-const handleDouble: MoveHandler = async (player, handIdx, ioManager) => {
+const handleDouble: MoveHandler = async (player, handIdx, shoe, ioManager) => {
     await ioManager.output(`${player.name} doubles down.`);
 
     const hand: Hand = player.getHand(handIdx);
@@ -68,7 +69,7 @@ const handleDouble: MoveHandler = async (player, handIdx, ioManager) => {
     const bet: number = await player.makeBet(hand.getBetSize());
     hand.setBetSize(bet * 2);
 
-    const card: Card = drawCard();
+    const card: Card = shoe.drawCard();
     hand.addCard(card);
     const total: number = hand.getTotal();
     if (total > 21) {
@@ -80,7 +81,7 @@ const handleDouble: MoveHandler = async (player, handIdx, ioManager) => {
     }
 }
 
-const handleSplit: MoveHandler = async (player, handIdx, ioManager) => {
+const handleSplit: MoveHandler = async (player, handIdx, shoe, ioManager) => {
     await ioManager.output(`${player.name} splits hand ${handIdx}.`);
     const hands: Hand[] = player.getHands();
     const hand1: Hand = hands[handIdx];
@@ -98,8 +99,8 @@ const handleSplit: MoveHandler = async (player, handIdx, ioManager) => {
     // insert hand2
     hands.splice(handIdx + 1, 0, hand2);
 
-    hand1.addCard(drawCard());
-    hand2.addCard(drawCard());
+    hand1.addCard(shoe.drawCard());
+    hand2.addCard(shoe.drawCard());
 }
 
 const moveHandlerMap = new Map<Move, MoveHandler>([

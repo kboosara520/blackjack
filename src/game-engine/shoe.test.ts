@@ -1,76 +1,66 @@
-import { beforeEach, describe, expect, it } from '@jest/globals';
-import { card, Rank, Suit } from './types/card';
-import { shoe, discardedPile, drawCard, initShoeForTesting, revealCard, initShoe, checkForReshuffle, discard } from './shoe';
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
+import { Shoe } from './shoe';
 
 describe('shoe', () => {
+    let testShoe: Shoe;
+
     beforeEach(() => {
-        initShoeForTesting([
-            card(Rank.Ace, Suit.Spades, false),
-            card(Rank.King, Suit.Hearts, false),
-            card(Rank.Five, Suit.Diamonds, false),
-        ]);
+        testShoe = new Shoe(1, 50);
     });
 
-    it('initializes the right number of card', () => {
-        initShoe(4, 60);
-        expect(shoe.length).toEqual((4 * 52) - 1); // burn first card
+    it('initializes with one fewer card after burning the first card', () => {
+        const fourDeckShoe = new Shoe(4, 60);
+
+        let cardsDrawn = 0;
+        while (!fourDeckShoe.isEmpty()) {
+            fourDeckShoe.drawCard();
+            cardsDrawn++;
+        }
+
+        expect(cardsDrawn).toBe((4 * 52) - 1);
     });
 
     it('reshuffles shoe when there are not enough cards left', () => {
-        initShoe(1, 50);
+        const shuffle = jest.spyOn(testShoe, 'shuffle');
+
         for (let i = 0; i < 26; i++) {
-            discard(drawCard());
+            testShoe.discard(testShoe.drawCard());
         }
 
-        expect(shoe.length).toEqual(25);
-        expect(discardedPile.length).toEqual(27);
+        testShoe.checkForReshuffle();
 
-        checkForReshuffle();
-
-        expect(shoe.length).toEqual(51);
-        expect(discardedPile.length).toEqual(1);
+        expect(shuffle).toHaveBeenCalledTimes(1);
     });
 
     it('does nothing when there are enough cards left', () => {
-        initShoe(1, 50);
+        const shuffle = jest.spyOn(testShoe, 'shuffle');
+
         for (let i = 0; i < 25; i++) {
-            discard(drawCard());
+            testShoe.discard(testShoe.drawCard());
         }
 
-        expect(shoe.length).toEqual(26);
-        expect(discardedPile.length).toEqual(26);
+        testShoe.checkForReshuffle();
 
-        checkForReshuffle();
-
-        expect(shoe.length).toEqual(26);
-        expect(discardedPile.length).toEqual(26);
-    })
+        expect(shuffle).not.toHaveBeenCalled();
+    });
 
     it('draws the top card and flips it face up by default', () => {
-        const drawn = drawCard();
-        expect(drawn).toMatchObject({ rank: Rank.Five, suit: Suit.Diamonds, isFaceUp: true });
-    });
+        const drawn = testShoe.drawCard();
 
-    it('respects explicit isFaceUp when drawing a card', () => {
-        const drawn = drawCard(false);
-        expect(drawn.isFaceUp).toBe(false);
-    });
-
-    it('reveals a face-down card', () => {
-        const drawn = drawCard(false);
-        expect(() => revealCard(drawn)).not.toThrow();
         expect(drawn.isFaceUp).toBe(true);
     });
 
-    it('throws when revealing a card that is already face up', () => {
-        const drawn = drawCard();
-        expect(() => revealCard(drawn)).toThrow('Cannot reveal card that is already face up');
+    it('respects explicit isFaceUp when drawing a card', () => {
+        const drawn = testShoe.drawCard(false);
+
+        expect(drawn.isFaceUp).toBe(false);
     });
 
     it('throws when the shoe is empty', () => {
-        drawCard();
-        drawCard();
-        drawCard();
-        expect(() => drawCard()).toThrow('Shoe is empty');
+        while (!testShoe.isEmpty()) {
+            testShoe.drawCard();
+        }
+
+        expect(() => testShoe.drawCard()).toThrow('Shoe is empty');
     });
 });

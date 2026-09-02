@@ -2,20 +2,13 @@ import { Hand, HandType, Move } from "../types/hand";
 import { IOManager } from "../io-manager/io-manager";
 
 export class Player {
-    public readonly name: string;
     protected hands: Hand[] = [];
-    private chips: number;
-    private ioManager: IOManager;
 
     constructor(
-        name: string, 
-        chips: number, 
-        ioManager: IOManager,
-    ) {
-        this.name = name;
-        this.chips = chips;
-        this.ioManager = ioManager;
-    }
+        public readonly name: string, 
+        private chips: number, 
+        private readonly ioManager: IOManager,
+    ) {}
 
     public newHand(betSize: number): void {
         this.hands.push(new Hand([], betSize));

@@ -7,11 +7,8 @@ import { NoneIO } from "../io-manager/none-io";
 const s17: Set<RuleSet> = new Set<RuleSet>([RuleSet.S17NoSurrrender, RuleSet.S17WithSurrender]);
 
 export class Dealer extends Player {
-    private ruleSet: RuleSet;
-
-    constructor(ruleSet: RuleSet) {
+    constructor(private readonly ruleSet: RuleSet) {
         super("Dealer", 0, new NoneIO());
-        this.ruleSet = ruleSet;
         this.hands.push(new Hand([], 0));
     }
 

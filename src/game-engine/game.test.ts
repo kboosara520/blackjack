@@ -3,13 +3,8 @@ import { Game, RuleSet } from './game';
 import { GameMode } from './types/game-mode';
 import { card, Card, Rank } from './types/card';
 import { processHands } from './hands-processor';
-import {
-	checkForReshuffle,
-	discard,
-	drawCard,
-	initShoe,
-	revealCard,
-} from './shoe';
+import { Player } from './participants/player';
+import { Shoe } from './shoe';
 import { IOManager } from './io-manager/io-manager';
 
 jest.mock('./hands-processor', () => ({
@@ -17,19 +12,17 @@ jest.mock('./hands-processor', () => ({
 }));
 
 jest.mock('./shoe', () => ({
-	checkForReshuffle: jest.fn(),
-	discard: jest.fn(),
-	drawCard: jest.fn(),
-	initShoe: jest.fn(),
-	revealCard: jest.fn(),
+	Shoe: jest.fn(),
 }));
 
-const mockedCheckForReshuffle = jest.mocked(checkForReshuffle);
-const mockedDiscard = jest.mocked(discard);
-const mockedDrawCard = jest.mocked(drawCard);
-const mockedInitShoe = jest.mocked(initShoe);
+const mockedShoeConstructor = jest.mocked(Shoe);
 const mockedProcessHands = jest.mocked(processHands);
-const mockedRevealCard = jest.mocked(revealCard);
+let mockedShoe: {
+	checkForReshuffle: jest.Mock;
+	discard: jest.Mock;
+	drawCard: jest.Mock;
+	updateRunningCount: jest.Mock;
+};
 
 function createIOManager(): IOManager {
 	return {
@@ -39,10 +32,19 @@ function createIOManager(): IOManager {
 	};
 }
 
+function createPlayers(noOfPlayers: number, ioManager: IOManager): Player[] {
+	return Array.from(
+		{ length: noOfPlayers },
+		(_, index) => new Player(`Player ${index}`, 1000, ioManager),
+	);
+}
+
 function queueCards(cards: Card[]): void {
-	mockedDrawCard.mockImplementation(() => {
+	mockedShoe.drawCard.mockImplementation((...args: unknown[]) => {
 		const nextCard = cards.shift();
 		if (!nextCard) throw new Error('Test card queue is empty');
+		const isFaceUp = args[0] as boolean | undefined;
+		nextCard.isFaceUp = isFaceUp ?? true;
 		return nextCard;
 	});
 }
@@ -50,13 +52,21 @@ function queueCards(cards: Card[]): void {
 describe('Game', () => {
 	beforeEach(() => {
 		jest.clearAllMocks();
+		mockedShoe = {
+			checkForReshuffle: jest.fn(),
+			discard: jest.fn(),
+			drawCard: jest.fn(),
+			updateRunningCount: jest.fn(),
+		};
+		mockedShoeConstructor.mockImplementation(() => mockedShoe as unknown as jest.Mocked<Shoe>);
 		mockedProcessHands.mockResolvedValue(undefined);
 	});
 
 	it('initializes the shoe and creates the requested players', () => {
-		new Game(GameMode.Normal, RuleSet.S17NoSurrrender, 75, 2, 4, createIOManager());
+		const ioManager = createIOManager();
+		new Game(GameMode.Normal, RuleSet.S17NoSurrrender, 75, createPlayers(2, ioManager), 4, ioManager);
 
-		expect(mockedInitShoe).toHaveBeenCalledWith(4, 75);
+		expect(mockedShoeConstructor).toHaveBeenCalledWith(4, 75);
 	});
 
 	it('plays a normal round and cleans up the hands', async () => {
@@ -66,14 +76,14 @@ describe('Game', () => {
 			card(Rank.Five),
 			card(Rank.Six)
 		]);
-		const game = new Game(GameMode.Normal, RuleSet.S17NoSurrrender, 75, 1, 1, createIOManager());
+		const ioManager = createIOManager();
+		const game = new Game(GameMode.Normal, RuleSet.S17NoSurrrender, 75, createPlayers(1, ioManager), 1, ioManager);
 
 		await game.playRound();
 
-		expect(mockedCheckForReshuffle).toHaveBeenCalledTimes(1);
+		expect(mockedShoe.checkForReshuffle).toHaveBeenCalledTimes(1);
 		expect(mockedProcessHands).toHaveBeenCalledTimes(2);
-		expect(mockedRevealCard).toHaveBeenCalledTimes(1);
-		expect(mockedDiscard).toHaveBeenCalledTimes(4);
+		expect(mockedShoe.discard).toHaveBeenCalledTimes(4);
 		expect((game as any).players[0].getHands()).toHaveLength(0);
 		expect((game as any).dealer.getHands()).toHaveLength(1);
 		expect((game as any).dealer.getHand(0).length()).toBe(0);
@@ -86,13 +96,13 @@ describe('Game', () => {
 			card(Rank.Nine),
 			card(Rank.Ten)
 		]);
-		const game = new Game(GameMode.Normal, RuleSet.S17NoSurrrender, 75, 1, 1, createIOManager());
+		const ioManager = createIOManager();
+		const game = new Game(GameMode.Normal, RuleSet.S17NoSurrrender, 75, createPlayers(1, ioManager), 1, ioManager);
 
 		await game.playRound();
 
 		expect(mockedProcessHands).not.toHaveBeenCalled();
-		expect(mockedRevealCard).not.toHaveBeenCalled();
-		expect(mockedDiscard).toHaveBeenCalledTimes(4);
+		expect(mockedShoe.discard).toHaveBeenCalledTimes(4);
 	});
 
 	it('pushes a player blackjack when the dealer also has blackjack', async () => {
@@ -102,13 +112,14 @@ describe('Game', () => {
 			card(Rank.Ten),
 			card(Rank.Ace)
 		]);
-		const game = new Game(GameMode.Normal, RuleSet.S17NoSurrrender, 75, 1, 1, createIOManager());
+		const ioManager = createIOManager();
+		const game = new Game(GameMode.Normal, RuleSet.S17NoSurrrender, 75, createPlayers(1, ioManager), 1, ioManager);
 
 		await game.playRound();
 
 		const player = (game as any).players[0];
 		expect(player.getChips()).toBe(1000);
-		expect(mockedDiscard).toHaveBeenCalledTimes(4);
+		expect(mockedShoe.discard).toHaveBeenCalledTimes(4);
 	});
 
 	it('pays a player blackjack before hand processing', async () => {
@@ -118,7 +129,8 @@ describe('Game', () => {
 			card(Rank.Ten),
 			card(Rank.Six)
 		]);
-		const game = new Game(GameMode.Normal, RuleSet.S17NoSurrrender, 75, 1, 1, createIOManager());
+		const ioManager = createIOManager();
+		const game = new Game(GameMode.Normal, RuleSet.S17NoSurrrender, 75, createPlayers(1, ioManager), 1, ioManager);
 
 		await game.playRound();
 
@@ -128,6 +140,7 @@ describe('Game', () => {
 		expect(mockedProcessHands).toHaveBeenCalledWith(
 			(game as any).dealer,
 			expect.anything(),
+			ioManager,
 		);
 	});
 
@@ -143,7 +156,8 @@ describe('Game', () => {
 				participant.getHand(0).addCard(card(Rank.Ten));
 			}
 		});
-		const game = new Game(GameMode.Normal, RuleSet.S17NoSurrrender, 75, 1, 1, createIOManager());
+		const ioManager = createIOManager();
+		const game = new Game(GameMode.Normal, RuleSet.S17NoSurrrender, 75, createPlayers(1, ioManager), 1, ioManager);
 
 		await game.playRound();
 
@@ -166,7 +180,8 @@ describe('Game', () => {
 				participant.getHand(0).addCard(card(Rank.Ten));
 			}
 		});
-		const game = new Game(GameMode.Normal, RuleSet.S17NoSurrrender, 75, 1, 1, createIOManager());
+		const ioManager = createIOManager();
+		const game = new Game(GameMode.Normal, RuleSet.S17NoSurrrender, 75, createPlayers(1, ioManager), 1, ioManager);
 
 		await game.playRound();
 
@@ -182,7 +197,8 @@ describe('Game', () => {
 			card(Rank.Six),
 			card(Rank.Seven)
 		]);
-		const game = new Game(GameMode.Normal, RuleSet.S17NoSurrrender, 75, 2, 1, createIOManager());
+		const ioManager = createIOManager();
+		const game = new Game(GameMode.Normal, RuleSet.S17NoSurrrender, 75, createPlayers(2, ioManager), 1, ioManager);
 
 		await game.playRound();
 

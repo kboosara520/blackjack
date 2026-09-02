@@ -1,102 +1,88 @@
 import { card, Card, Rank, Suit } from "./types/card";
 import { getCardVal } from "./types/hand";
 
-export let shoe: Card[];
-export let discardedPile: Card[] = [];
-export let runningCount: number = 0;
-export let penetration: number;
-let numCardsBeforeReshuffle: number; // number of cards left before reshuffle
+export class Shoe {
+    private cards: Card[];
+    private discardedPile: Card[] = [];
+    private runningCount: number = 0;
+    private numCardsBeforeReshuffle: number; // number of cards left before reshuffle
 
-export function initShoe(noOfDecks: number, penetrationInput: number): void {
-    shoe = [];
-    penetration = penetrationInput;
-    numCardsBeforeReshuffle = Math.round(noOfDecks * 52 * ((100 - penetration) / 100));
-    for (const rank of Object.values(Rank)) {
-        for (const suit of Object.values(Suit)) {
-            for (let i = 0; i < noOfDecks; i++) {
-                shoe.push(card(rank, suit));
+    constructor(private readonly noOfDecks: number, private readonly penetration: number) {
+        this.cards = [];
+        this.numCardsBeforeReshuffle = Math.round(noOfDecks * 52 * ((100 - this.penetration) / 100));
+        for (const rank of Object.values(Rank)) {
+            for (const suit of Object.values(Suit)) {
+                for (let i = 0; i < noOfDecks; i++) {
+                    this.cards.push(card(rank, suit));
+                }
             }
         }
-    }
-    shuffle();
-}
-
-export function initShoeForTesting(cards: Card[]): void {
-    runningCount = 0;
-    discardedPile = [];
-    shoe = [...cards];
-    for (const card of cards) {
-        updateRunningCount(card);
-    }
-}
-
-export function drawCard(isFaceUp?: boolean): Card {
-    const card: Card | undefined = shoe.pop();
-    if (!card) {
-        // reshuffle the cards
-        throw new Error("Shoe is empty");
+        this.shuffle();
     }
 
-    if (isFaceUp === undefined) {
-        card.isFaceUp = true;
-    }
-    else {
-        card.isFaceUp = isFaceUp;
-    }
+    public drawCard(isFaceUp?: boolean): Card {
+        const card: Card | undefined = this.cards.pop();
+        if (!card) {
+            // reshuffle the cards
+            throw new Error("Shoe is empty");
+        }
 
-    if (card.isFaceUp) {
-        updateRunningCount(card);
-    }
+        if (isFaceUp === undefined) {
+            card.isFaceUp = true;
+        }
+        else {
+            card.isFaceUp = isFaceUp;
+        }
 
-    return card;
-}
+        if (card.isFaceUp) {
+            this.updateRunningCount(card);
+        }
 
-export function revealCard(card: Card): void {
-    if (card.isFaceUp == true) {
-        throw new Error("Cannot reveal card that is already face up");
-    }
-    card.isFaceUp = true;
-    updateRunningCount(card);
-}
-
-export function discard(card: Card): void {
-    discardedPile.push(card);
-}
-
-export function checkForReshuffle(): void {
-    if (shoe.length < numCardsBeforeReshuffle) {
-        shoe = shoe.concat(discardedPile);
-        discardedPile = [];
-        shuffle();
-    }
-}
-
-function shuffle() {
-    // reset runningCount
-    runningCount = 0;
-    if (isEmpty()) throw new Error("The shoe is undefined or empty.");
-    for (let i = shoe.length - 1; i >= 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        let tmp: Card = shoe[i];
-        shoe[i] = shoe[j];
-        shoe[j] = tmp;
+        return card;
     }
 
-    // burn first card
-    const firstCard: Card = shoe.pop()!;
-    discard(firstCard);
-}
-
-function isEmpty() {
-    return !shoe || shoe.length == 0;
-}
-
-function updateRunningCount(card: Card): void {
-    const cardVal: number = getCardVal(card);
-    if (cardVal <= 6) {
-        runningCount += 1;
+    public checkForReshuffle(): void {
+        if (this.cards.length < this.numCardsBeforeReshuffle) {
+            this.cards = this.cards.concat(this.discardedPile);
+            this.discardedPile = [];
+            this.shuffle();
+        }
     }
-    else if (cardVal >= 10) {
-        runningCount -= 1;
+
+    public shuffle(): void {
+        this.runningCount = 0;
+        if (this.isEmpty()) throw new Error("The shoe is undefined or empty.");
+        for (let i = this.cards.length - 1; i >= 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            let tmp: Card = this.cards[i];
+            this.cards[i] = this.cards[j];
+            this.cards[j] = tmp;
+        }
+
+        // burn first card
+        const firstCard: Card = this.cards.pop()!;
+        this.discard(firstCard);
     }
-}
+
+    public discard(card: Card): void {
+        this.discardedPile.push(card);
+    }
+
+    public updateRunningCount(card: Card) {
+        const cardVal: number = getCardVal(card);
+        if (cardVal <= 6) {
+            this.runningCount += 1;
+        }
+        else if (cardVal >= 10) {
+            this.runningCount -= 1;
+        }
+    }
+
+    public isEmpty(): boolean {
+        return !this.cards || this.cards.length == 0;
+    }
+
+    public getRunningCount(): number {
+        return this.runningCount;
+    }
+};

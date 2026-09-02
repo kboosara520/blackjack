@@ -4,7 +4,7 @@ import { Player } from './participants/player';
 import { IOManager } from './io-manager/io-manager';
 import { card, Rank } from './types/card';
 import { Move } from './types/hand';
-import { drawCard } from './shoe';
+import { Shoe } from './shoe';
 
 jest.mock('./io-manager/stdin-input', () => ({
     StdIO: jest.fn().mockImplementation(() => ({
@@ -12,11 +12,8 @@ jest.mock('./io-manager/stdin-input', () => ({
     })),
 }));
 
-jest.mock('./shoe', () => ({
-    drawCard: jest.fn(),
-}));
-
-const mockedDrawCard = jest.mocked(drawCard);
+let testShoe: Shoe;
+let mockedDrawCard: ReturnType<typeof jest.spyOn>;
 
 function createPlayer(moves: string[], chips = 600): Player {
     const ioManager: IOManager = {
@@ -46,7 +43,8 @@ async function placeInitialBet(player: Player, betSize = 100): Promise<void> {
 
 describe('processHands', () => {
     beforeEach(() => {
-        mockedDrawCard.mockReset();
+        testShoe = new Shoe(1, 50);
+        mockedDrawCard = jest.spyOn(testShoe, 'drawCard');
     });
 
     it('rejects an invalid move', async () => {
@@ -57,7 +55,7 @@ describe('processHands', () => {
             .fn<(handIdx: number) => Promise<Move>>()
             .mockResolvedValue('invalid' as Move);
 
-        await expect(processHands(player, createProcessorIO())).rejects.toThrow('Invalid move invalid.');
+        await expect(processHands(player, testShoe, createProcessorIO())).rejects.toThrow('Invalid move invalid.');
     });
 
     it('processes a hit and then a stand', async () => {
@@ -67,7 +65,7 @@ describe('processHands', () => {
         player.getHand(0).addCard(card(Rank.Three));
         mockedDrawCard.mockReturnValueOnce(card(Rank.Five));
 
-        await processHands(player, createProcessorIO());
+        await processHands(player, testShoe, createProcessorIO());
 
         const hand = player.getHand(0);
         expect(hand.length()).toBe(3);
@@ -83,7 +81,7 @@ describe('processHands', () => {
         player.getHand(0).addCard(card(Rank.Ten));
         mockedDrawCard.mockReturnValueOnce(card(Rank.Five));
 
-        await processHands(player, createProcessorIO());
+        await processHands(player, testShoe, createProcessorIO());
 
         const hand = player.getHand(0);
         expect(hand.getTotal()).toBe(25);
@@ -98,7 +96,7 @@ describe('processHands', () => {
         player.getHand(0).addCard(card(Rank.Four));
         mockedDrawCard.mockReturnValueOnce(card(Rank.Two));
 
-        await processHands(player, createProcessorIO());
+        await processHands(player, testShoe, createProcessorIO());
 
         const hand = player.getHand(0);
         expect(hand.getBetSize()).toBe(200);
@@ -116,7 +114,7 @@ describe('processHands', () => {
             .fn<(handIdx: number) => Promise<Move>>()
             .mockResolvedValue(Move.Double);
 
-        await expect(processHands(player, createProcessorIO()))
+        await expect(processHands(player, testShoe, createProcessorIO()))
             .rejects
             .toThrow('test does not have enough chips.');
     });
@@ -131,7 +129,7 @@ describe('processHands', () => {
             .mockResolvedValue(Move.Double);
         mockedDrawCard.mockReturnValueOnce(card(Rank.Ten));
 
-        await processHands(player, createProcessorIO());
+        await processHands(player, testShoe, createProcessorIO());
 
         expect(player.getHand(0).getTotal()).toBe(26);
         expect(player.getHand(0).getIsDone()).toBe(true);
@@ -146,7 +144,7 @@ describe('processHands', () => {
             .mockReturnValueOnce(card(Rank.Two))
             .mockReturnValueOnce(card(Rank.Three));
 
-        await processHands(player, createProcessorIO());
+        await processHands(player, testShoe, createProcessorIO());
 
         expect(player.getHands()).toHaveLength(2);
         expect(player.getHand(0).getIsActive()).toBe(false);
@@ -168,7 +166,7 @@ describe('processHands', () => {
             .fn<(handIdx: number) => Promise<Move>>()
             .mockResolvedValue(Move.Split);
 
-        await expect(processHands(player, createProcessorIO()))
+        await expect(processHands(player, testShoe, createProcessorIO()))
             .rejects
             .toThrow("test's hand 0 is not a pair, therefore, it can't be split.");
     });
@@ -182,7 +180,7 @@ describe('processHands', () => {
             .fn<(handIdx: number) => Promise<Move>>()
             .mockResolvedValue(Move.Split);
 
-        await expect(processHands(player, createProcessorIO()))
+        await expect(processHands(player, testShoe, createProcessorIO()))
             .rejects
             .toThrow('test does not have enough chips.');
     });

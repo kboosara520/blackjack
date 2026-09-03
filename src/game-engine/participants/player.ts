@@ -53,6 +53,14 @@ export class Player {
         return betSize;
     }
 
+    public isDone(): boolean {
+        let allHandsDone = true;
+        for (const hand of this.hands) {
+            allHandsDone = allHandsDone && hand.getIsDone();
+        }
+        return allHandsDone;
+    }
+
     private isAllowedMove(value: string, hand: Hand): value is Move{
         const allowedMoves = this.getAllowedMoves(hand);
         return allowedMoves.has(value as Move);

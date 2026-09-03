@@ -9,30 +9,18 @@ import { RuleSet } from "./types/ruleset";
 import { Shoe } from "./shoe";
 
 export class Game {
-    private gameMode: GameMode;
-    private ruleSet: RuleSet;
-    private readonly penetration: number;
-    private dealer: Dealer;
-    private players: Player[] = [];
-    private shoe: Shoe;
-    private ioManager: IOManager;
+    private readonly dealer: Dealer;
+    private readonly shoe: Shoe;
 
     constructor(
-        gameMode: GameMode, 
-        ruleSet: RuleSet, 
-        penetration: number,
-        players: Player[], 
+        private readonly gameMode: GameMode, 
+        private readonly ruleSet: RuleSet, 
+        private readonly penetration: number,
+        private readonly players: Player[], 
         noOfDecks: number,
-        ioManager: IOManager
+        private readonly ioManager: IOManager
     ) {
-        this.gameMode = gameMode;
-        this.ruleSet = ruleSet;
-        this.penetration = penetration;
-        this.players = players;
-        this.ioManager = ioManager;
-
         this.shoe = new Shoe(noOfDecks, penetration);
-
         this.dealer = new Dealer(this.ruleSet);
     }
 
@@ -72,23 +60,33 @@ export class Game {
         for (const player of this.players) {
             await processHands(player, this.shoe, this.ioManager);
         }
-        
-        // dealer makes moves
-        await processHands(this.dealer, this.shoe, this.ioManager);
 
-        // compare hand totals and pay winners
+        let allPlayerBust = true;
+        for (const player of this.players) {
+            allPlayerBust = allPlayerBust && player.isDone();
+        }
+
+        console.log(allPlayerBust);
+
         const dealerHand: Hand = this.dealer.getHand(0);
         this.revealCard(dealerHand.getCards()[1]);
-        const dealerTotal: number = this.dealer.getHand(0).getTotal();
-        await this.ioManager.output(`The dealer's total is ${dealerTotal}`);
 
-        if (dealerTotal > 21) {
-            await this.handleDealerBust();
-        }
-        else {
-            await this.handleNormalCalculations(dealerTotal);
-        }
+        if (!allPlayerBust) {
+            // dealer makes moves
+            await processHands(this.dealer, this.shoe, this.ioManager);
+    
+            // compare hand totals and pay winners
+            const dealerTotal: number = this.dealer.getHand(0).getTotal();
+            await this.ioManager.output(`The dealer's total is ${dealerTotal}`);
+    
+            if (dealerTotal > 21) {
+                await this.handleDealerBust();
+            }
+            else {
+                await this.handleNormalCalculations(dealerTotal);
+            }
 
+        }
         this.endRound();
     }
 

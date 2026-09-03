@@ -18,7 +18,9 @@ const game: Game = new Game(
 
 async function main() {
     try {
-        await game.playRound();
+        while (true) {
+            await game.playRound();
+        }
     }
     finally {
         stdIO.cleanup();

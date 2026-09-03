@@ -114,6 +114,10 @@ export class Hand {
     }
 };
 
+export function isMove(value: string): value is Move {
+    return Object.values(Move).includes(value as Move);
+}
+
 export function getVal(rank: Rank): number {
     if (rank === Rank.Jack || rank === Rank.Queen || rank === Rank.King) return 10;
     if (rank === Rank.Ace) return 11;

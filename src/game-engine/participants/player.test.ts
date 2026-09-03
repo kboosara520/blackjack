@@ -1,22 +1,22 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { Player } from './player';
-import { Hand } from '../types/hand';
-import { IOManager } from '../io-manager/io-manager';
+import { Hand, Move } from '../types/hand';
 import { card, Rank } from '../types/card';
+import { GameInput } from '../communication/game-input';
 
 describe('player', () => {
     let player: Player;
     const startingChips: number = 600;
 
-    const mockIO: IOManager = {
-        readLine: jest.fn<() => Promise<string | null>>(),
-        output: jest.fn<() => Promise<void>>(),
-        cleanup: jest.fn(),
+    const mockInput: GameInput = {
+        waitForMove: jest.fn<() => Promise<Move>>(),
+        waitForBet: jest.fn<() => Promise<number>>(),
     };
 
     beforeEach(() => {
-        mockIO.readLine = jest.fn<() => Promise<string | null>>().mockResolvedValue('H');
-        player = new Player('test', startingChips, mockIO);
+        jest.mocked(mockInput.waitForMove).mockResolvedValue(Move.Hit);
+        jest.mocked(mockInput.waitForBet).mockResolvedValue(100);
+        player = new Player(0, 'test', startingChips, mockInput);
     });
 
     it('can get all hands', () => {
@@ -67,7 +67,9 @@ describe('player', () => {
     
         it('throws if the move is null', async () => {
             player.newHand(100);
-            mockIO.readLine = jest.fn<() => Promise<string | null>>().mockResolvedValue(null);
+            jest.mocked(mockInput.waitForMove).mockRejectedValue(
+                new Error("Input is null likely because the file has ended"),
+            );
             await expect(player.makeMove(0))
                 .rejects
                 .toThrow("Input is null likely because the file has ended");
@@ -75,7 +77,7 @@ describe('player', () => {
 
         it('throws if move is not allowed', async () => {
             player.newHand(100);
-            mockIO.readLine = jest.fn<() => Promise<string | null>>().mockResolvedValue("HELLO");
+            jest.mocked(mockInput.waitForMove).mockResolvedValue("HELLO" as Move);
             await expect(player.makeMove(0))
                 .rejects
                 .toThrow("Move HELLO is not allowed");
@@ -86,20 +88,18 @@ describe('player', () => {
             player.getHand(0).addCard(card(Rank.Six));
             player.getHand(0).addCard(card(Rank.Four));
 
-            mockIO.readLine = jest.fn<() => Promise<string | null>>()
-                .mockResolvedValue('D');
+            jest.mocked(mockInput.waitForMove).mockResolvedValue(Move.Double);
 
             await expect(player.makeMove(0)).resolves.toBe('D');
         });
 
         it('does not allow double when the player does not have enough chips', async () => {
-            player = new Player('test', startingChips - 1, mockIO);
+            player = new Player(0, 'test', startingChips - 1, mockInput);
             player.newHand(startingChips);
             player.getHand(0).addCard(card(Rank.Six));
             player.getHand(0).addCard(card(Rank.Four));
 
-            mockIO.readLine = jest.fn<() => Promise<string | null>>()
-                .mockResolvedValue('D');
+            jest.mocked(mockInput.waitForMove).mockResolvedValue(Move.Double);
 
             await expect(player.makeMove(0))
                 .rejects
@@ -111,8 +111,7 @@ describe('player', () => {
             player.getHand(0).addCard(card(Rank.Eight));
             player.getHand(0).addCard(card(Rank.Eight));
 
-            mockIO.readLine = jest.fn<() => Promise<string | null>>()
-                .mockResolvedValue('P');
+            jest.mocked(mockInput.waitForMove).mockResolvedValue(Move.Split);
 
             await expect(player.makeMove(0)).resolves.toBe('P');
         });
@@ -122,8 +121,7 @@ describe('player', () => {
             player.getHand(0).addCard(card(Rank.Eight));
             player.getHand(0).addCard(card(Rank.Nine));
 
-            mockIO.readLine = jest.fn<() => Promise<string | null>>()
-                .mockResolvedValue('P');
+            jest.mocked(mockInput.waitForMove).mockResolvedValue(Move.Split);
 
             await expect(player.makeMove(0))
                 .rejects
@@ -133,21 +131,24 @@ describe('player', () => {
 
     describe('makeBet', () => {
         it('asks the player to make a bet', async () => {
-            mockIO.readLine = jest.fn<() => Promise<string | null>>().mockResolvedValue('100');
+            jest.mocked(mockInput.waitForBet).mockResolvedValue(100);
             expect(await player.makeBet()).toEqual(100);
             expect(player.getChips()).toEqual(startingChips - 100);
         });
 
         it('throws if the bet is null', async () => {
-            mockIO.readLine = jest.fn<() => Promise<string | null>>().mockResolvedValue(null);
+            jest.mocked(mockInput.waitForBet).mockRejectedValue(
+                new Error("Input is null likely because the file has ended"),
+            );
             await expect(player.makeBet())
                 .rejects
                 .toThrow("Input is null likely because the file has ended");
         });
 
         it('throws if the bet is empty', async () => {
-            mockIO.readLine = jest.fn<() => Promise<string | null>>()
-                .mockResolvedValue('');
+            jest.mocked(mockInput.waitForBet).mockRejectedValue(
+                new Error("Input is null likely because the file has ended"),
+            );
 
             await expect(player.makeBet())
                 .rejects
@@ -155,8 +156,7 @@ describe('player', () => {
         });
 
         it('throws if the bet is not a number', async () => {
-            mockIO.readLine = jest.fn<() => Promise<string | null>>()
-                .mockResolvedValue('abc');
+            jest.mocked(mockInput.waitForBet).mockRejectedValue(new Error("Not a number"));
 
             await expect(player.makeBet())
                 .rejects
@@ -164,8 +164,7 @@ describe('player', () => {
         });
 
         it('throws if the bet exceeds available chips', async () => {
-            mockIO.readLine = jest.fn<() => Promise<string | null>>()
-                .mockResolvedValue((startingChips + 1).toString());
+            jest.mocked(mockInput.waitForBet).mockResolvedValue(startingChips + 1);
 
             await expect(player.makeBet())
                 .rejects

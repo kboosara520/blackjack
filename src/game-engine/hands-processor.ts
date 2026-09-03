@@ -3,18 +3,21 @@ import { Card } from "./types/card";
 import { Hand, HandType } from "./types/hand";
 import { Player } from "./participants/player";
 import { Shoe } from "./shoe";
-import { IOManager } from "./io-manager/io-manager";
+import { GameEventSink } from "./communication/game-event-sink";
 
-type MoveHandler = (player: Player, handIdx: number, shoe: Shoe, ioManager: IOManager) => Promise<void>;
+type MoveHandler = (player: Player, handIdx: number, shoe: Shoe, gameEventSink: GameEventSink) => Promise<void>;
 
-export async function processHands(player: Player, shoe: Shoe, ioManager: IOManager): Promise<void> {
+export async function processHands(player: Player, shoe: Shoe, gameEventSink: GameEventSink): Promise<void> {
     let i: number = 0;
     const hands: Hand[] = player.getHands();
     while (i < hands.length) {
         if (!hands[i].getIsActive()) continue;
-        await ioManager.output(`${player.name}'s hand: ${hands[i].toString()}`);
+        gameEventSink.publish({
+            type: "message",
+            text: `${player.name}'s hand: ${hands[i].toString()}`,
+        });
         const move: Move = await player.makeMove(i);
-        await processMove(player, i, move, shoe, ioManager);
+        await processMove(player, i, move, shoe, gameEventSink);
         const hand: Hand = player.getHand(i);
         if (!hand.getIsActive() || hand.getIsDone()) {
             i++;
@@ -27,19 +30,25 @@ async function processMove(
     handIdx: number,
     move: Move,
     shoe: Shoe,
-    ioManager: IOManager,
+    gameEventSink: GameEventSink
 ): Promise<void> {
     const handler: MoveHandler | undefined = moveHandlerMap.get(move);
     if (!handler) {
         throw new Error(`Invalid move ${move}.`);
     }
-    await handler(player, handIdx, shoe, ioManager);
+    await handler(player, handIdx, shoe, gameEventSink);
     const hand: Hand = player.getHand(handIdx);
-    await ioManager.output(`${player.name}'s hand: ${hand.toString()}`);
+    gameEventSink.publish({
+        type: "message",
+        text: `${player.name}'s hand: ${hand.toString()}`,
+    });
 }
 
-const handleHit: MoveHandler = async (player, handIdx, shoe, ioManager) => {
-    await ioManager.output(`${player.name} hits.`);
+const handleHit: MoveHandler = async (player, handIdx, shoe, gameEventSink) => {
+    gameEventSink.publish({
+        type: "message",
+        text: `${player.name} hits.`,
+    });
 
     const hand: Hand = player.getHand(handIdx);
     const card: Card = shoe.drawCard();
@@ -47,18 +56,27 @@ const handleHit: MoveHandler = async (player, handIdx, shoe, ioManager) => {
 
     const total: number = hand.getTotal();
     if (total > 21) {
-        await ioManager.output(`${player.name} busts`);
+        gameEventSink.publish({
+            type: "message",
+            text: `${player.name} busts`,
+        });
         hand.setDone();
     }
 }
 
-const handleStand: MoveHandler = async (player, handIdx, shoe, ioManager) => {
-    await ioManager.output(`${player.name} stands.`);
+const handleStand: MoveHandler = async (player, handIdx, shoe, gameEventSink) => {
+    gameEventSink.publish({
+        type: "message",
+        text: `${player.name} stands.`,
+    });
     player.getHand(handIdx).setInactive();
 }
 
-const handleDouble: MoveHandler = async (player, handIdx, shoe, ioManager) => {
-    await ioManager.output(`${player.name} doubles down.`);
+const handleDouble: MoveHandler = async (player, handIdx, shoe, gameEventSink) => {
+    gameEventSink.publish({
+        type: "message",
+        text: `${player.name} doubles down.`,
+    });
 
     const hand: Hand = player.getHand(handIdx);
     if (player.getChips() < hand.getBetSize()) {
@@ -73,7 +91,10 @@ const handleDouble: MoveHandler = async (player, handIdx, shoe, ioManager) => {
     hand.addCard(card);
     const total: number = hand.getTotal();
     if (total > 21) {
-        await ioManager.output(`${player.name} busts`);
+        gameEventSink.publish({
+            type: "message",
+            text: `${player.name} busts`,
+        });
         hand.setDone();
     }
     else {
@@ -81,8 +102,11 @@ const handleDouble: MoveHandler = async (player, handIdx, shoe, ioManager) => {
     }
 }
 
-const handleSplit: MoveHandler = async (player, handIdx, shoe, ioManager) => {
-    await ioManager.output(`${player.name} splits hand ${handIdx}.`);
+const handleSplit: MoveHandler = async (player, handIdx, shoe, gameEventSink) => {
+    gameEventSink.publish({
+        type: "message",
+        text: `${player.name} splits hand ${handIdx}.`,
+    });
     const hands: Hand[] = player.getHands();
     const hand1: Hand = hands[handIdx];
     if (hand1.getHandType() != HandType.Pair) {

@@ -1,3 +1,5 @@
+import { TerminalEventSink } from "../communication/terminal-event-sink";
+import { TerminalInput } from "../communication/terminal-input";
 import { Game } from "../game";
 import { StdIO } from "../io-manager/stdin-input";
 import { Player } from "../participants/player";
@@ -5,7 +7,8 @@ import { GameMode } from "../types/game-mode";
 import { RuleSet } from "../types/ruleset";
 
 const stdIO = new StdIO();
-const players = [new Player("Player 0", 1000, stdIO)];
+const terminalInput = new TerminalInput(stdIO);
+const players = [new Player(0, "Player 0", 1000, terminalInput)];
 
 const game: Game = new Game(
     GameMode.Normal,
@@ -13,7 +16,8 @@ const game: Game = new Game(
     75,
     players,
     4,
-    stdIO,
+    new TerminalEventSink(),
+    terminalInput,
 );
 
 async function main() {

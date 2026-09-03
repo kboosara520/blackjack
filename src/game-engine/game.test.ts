@@ -2,10 +2,12 @@ import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { Game, RuleSet } from './game';
 import { GameMode } from './types/game-mode';
 import { card, Card, Rank } from './types/card';
+import { Move } from './types/hand';
 import { processHands } from './hands-processor';
 import { Player } from './participants/player';
 import { Shoe } from './shoe';
-import { IOManager } from './io-manager/io-manager';
+import { GameEventSink } from './communication/game-event-sink';
+import { GameInput } from './communication/game-input';
 
 jest.mock('./hands-processor', () => ({
 	processHands: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
@@ -24,18 +26,20 @@ let mockedShoe: {
 	updateRunningCount: jest.Mock;
 };
 
-function createIOManager(): IOManager {
+type TestGameIO = GameInput & GameEventSink;
+
+function createTestGameIO(): TestGameIO {
 	return {
-		readLine: jest.fn<() => Promise<string | null>>().mockResolvedValue('100'),
-		output: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
-		cleanup: jest.fn(),
+		waitForBet: jest.fn<() => Promise<number>>().mockResolvedValue(100),
+		waitForMove: jest.fn<() => Promise<Move>>().mockResolvedValue(Move.Hit),
+		publish: jest.fn(),
 	};
 }
 
-function createPlayers(noOfPlayers: number, ioManager: IOManager): Player[] {
+function createPlayers(noOfPlayers: number, gameInput: GameInput): Player[] {
 	return Array.from(
 		{ length: noOfPlayers },
-		(_, index) => new Player(`Player ${index}`, 1000, ioManager),
+		(_, index) => new Player(index, `Player ${index}`, 1000, gameInput),
 	);
 }
 
@@ -63,8 +67,8 @@ describe('Game', () => {
 	});
 
 	it('initializes the shoe and creates the requested players', () => {
-		const ioManager = createIOManager();
-		new Game(GameMode.Normal, RuleSet.S17NoSurrrender, 75, createPlayers(2, ioManager), 4, ioManager);
+		const testGameIO = createTestGameIO();
+		new Game(GameMode.Normal, RuleSet.S17NoSurrrender, 75, createPlayers(2, testGameIO), 4, testGameIO, testGameIO);
 
 		expect(mockedShoeConstructor).toHaveBeenCalledWith(4, 75);
 	});
@@ -76,8 +80,8 @@ describe('Game', () => {
 			card(Rank.Five),
 			card(Rank.Six)
 		]);
-		const ioManager = createIOManager();
-		const game = new Game(GameMode.Normal, RuleSet.S17NoSurrrender, 75, createPlayers(1, ioManager), 1, ioManager);
+		const testGameIO = createTestGameIO();
+		const game = new Game(GameMode.Normal, RuleSet.S17NoSurrrender, 75, createPlayers(1, testGameIO), 1, testGameIO, testGameIO);
 
 		await game.playRound();
 
@@ -96,8 +100,8 @@ describe('Game', () => {
 			card(Rank.Nine),
 			card(Rank.Ten)
 		]);
-		const ioManager = createIOManager();
-		const game = new Game(GameMode.Normal, RuleSet.S17NoSurrrender, 75, createPlayers(1, ioManager), 1, ioManager);
+		const testGameIO = createTestGameIO();
+		const game = new Game(GameMode.Normal, RuleSet.S17NoSurrrender, 75, createPlayers(1, testGameIO), 1, testGameIO, testGameIO);
 
 		await game.playRound();
 
@@ -112,8 +116,8 @@ describe('Game', () => {
 			card(Rank.Ten),
 			card(Rank.Ace)
 		]);
-		const ioManager = createIOManager();
-		const game = new Game(GameMode.Normal, RuleSet.S17NoSurrrender, 75, createPlayers(1, ioManager), 1, ioManager);
+		const testGameIO = createTestGameIO();
+		const game = new Game(GameMode.Normal, RuleSet.S17NoSurrrender, 75, createPlayers(1, testGameIO), 1, testGameIO, testGameIO);
 
 		await game.playRound();
 
@@ -129,18 +133,19 @@ describe('Game', () => {
 			card(Rank.Ten),
 			card(Rank.Six)
 		]);
-		const ioManager = createIOManager();
-		const game = new Game(GameMode.Normal, RuleSet.S17NoSurrrender, 75, createPlayers(1, ioManager), 1, ioManager);
+		const testGameIO = createTestGameIO();
+		const players = createPlayers(1, testGameIO);
+		const game = new Game(GameMode.Normal, RuleSet.S17NoSurrrender, 75, players, 1, testGameIO, testGameIO);
 
 		await game.playRound();
 
 		const player = (game as any).players[0];
 		expect(player.getChips()).toBe(1150);
-		expect(mockedProcessHands).toHaveBeenCalledTimes(2);
+		expect(mockedProcessHands).toHaveBeenCalledTimes(1);
 		expect(mockedProcessHands).toHaveBeenCalledWith(
-			(game as any).dealer,
+			players[0],
 			expect.anything(),
-			ioManager,
+			testGameIO
 		);
 	});
 
@@ -156,8 +161,8 @@ describe('Game', () => {
 				participant.getHand(0).addCard(card(Rank.Ten));
 			}
 		});
-		const ioManager = createIOManager();
-		const game = new Game(GameMode.Normal, RuleSet.S17NoSurrrender, 75, createPlayers(1, ioManager), 1, ioManager);
+		const testGameIO = createTestGameIO();
+		const game = new Game(GameMode.Normal, RuleSet.S17NoSurrrender, 75, createPlayers(1, testGameIO), 1, testGameIO, testGameIO);
 
 		await game.playRound();
 
@@ -180,8 +185,8 @@ describe('Game', () => {
 				participant.getHand(0).addCard(card(Rank.Ten));
 			}
 		});
-		const ioManager = createIOManager();
-		const game = new Game(GameMode.Normal, RuleSet.S17NoSurrrender, 75, createPlayers(1, ioManager), 1, ioManager);
+		const testGameIO = createTestGameIO();
+		const game = new Game(GameMode.Normal, RuleSet.S17NoSurrrender, 75, createPlayers(1, testGameIO), 1, testGameIO, testGameIO);
 
 		await game.playRound();
 
@@ -197,8 +202,8 @@ describe('Game', () => {
 			card(Rank.Six),
 			card(Rank.Seven)
 		]);
-		const ioManager = createIOManager();
-		const game = new Game(GameMode.Normal, RuleSet.S17NoSurrrender, 75, createPlayers(2, ioManager), 1, ioManager);
+		const testGameIO = createTestGameIO();
+		const game = new Game(GameMode.Normal, RuleSet.S17NoSurrrender, 75, createPlayers(2, testGameIO), 1, testGameIO, testGameIO);
 
 		await game.playRound();
 

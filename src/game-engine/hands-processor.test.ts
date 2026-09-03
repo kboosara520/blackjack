@@ -1,10 +1,11 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { processHands } from './hands-processor';
 import { Player } from './participants/player';
-import { IOManager } from './io-manager/io-manager';
 import { card, Rank } from './types/card';
 import { Move } from './types/hand';
 import { Shoe } from './shoe';
+import { GameEventSink } from './communication/game-event-sink';
+import { GameInput } from './communication/game-input';
 
 jest.mock('./io-manager/stdin-input', () => ({
     StdIO: jest.fn().mockImplementation(() => ({
@@ -16,23 +17,18 @@ let testShoe: Shoe;
 let mockedDrawCard: ReturnType<typeof jest.spyOn>;
 
 function createPlayer(moves: string[], chips = 600): Player {
-    const ioManager: IOManager = {
-        readLine: jest.fn<() => Promise<string | null>>()
-            .mockResolvedValueOnce(moves[0] ?? null)
-            .mockResolvedValueOnce(moves[1] ?? null)
-            .mockResolvedValueOnce(moves[2] ?? null),
-        output: jest.fn<() => Promise<void>>(),
-        cleanup: jest.fn(),
+    const gameInput: GameInput = {
+        waitForBet: jest.fn<() => Promise<number>>().mockResolvedValue(100),
+        waitForMove: jest.fn<() => Promise<Move>>()
+            .mockImplementation(async () => moves.shift() as Move),
     };
 
-    return new Player('test', chips, ioManager);
+    return new Player(0, 'test', chips, gameInput);
 }
 
-function createProcessorIO(): IOManager {
+function createProcessorIO(): GameEventSink {
     return {
-        readLine: jest.fn<() => Promise<string | null>>(),
-        output: jest.fn<() => Promise<void>>(),
-        cleanup: jest.fn(),
+        publish: jest.fn(),
     };
 }
 

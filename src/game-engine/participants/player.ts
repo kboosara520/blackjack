@@ -1,13 +1,14 @@
 import { Hand, HandType, Move } from "../types/hand";
-import { IOManager } from "../io-manager/io-manager";
+import { GameInput } from "../communication/game-input";
 
 export class Player {
     protected hands: Hand[] = [];
 
     constructor(
+        public readonly id: number,
         public readonly name: string, 
         private chips: number, 
-        private readonly ioManager: IOManager,
+        private readonly gameInput: GameInput
     ) {}
 
     public newHand(betSize: number): void {
@@ -26,8 +27,7 @@ export class Player {
     }
 
     public async makeMove(handIdx: number): Promise<Move> {
-        let move: string | null = await this.ioManager.readLine("Make a move: ")
-        if (!move) throw new Error("Input is null likely because the file has ended");
+        let move: Move = await this.gameInput.waitForMove(this.id, handIdx);
         if (!this.isAllowedMove(move, this.getHand(handIdx))) throw new Error(`Move ${move} is not allowed`);
         return move;
     }
@@ -37,10 +37,7 @@ export class Player {
         // get input
         let betSize: number;
         if (!forcedBetSize) {
-            const input: string | null = await this.ioManager.readLine("Make a bet: ")
-            if (!input) throw new Error("Input is null likely because the file has ended");
-            betSize = Number(input);
-            if (Number.isNaN(betSize)) throw new Error("Not a number");
+            betSize = await this.gameInput.waitForBet(this.id);
         }
         else {
             betSize = forcedBetSize;
@@ -61,9 +58,9 @@ export class Player {
         return allHandsDone;
     }
 
-    private isAllowedMove(value: string, hand: Hand): value is Move{
+    private isAllowedMove(move: Move, hand: Hand): boolean {
         const allowedMoves = this.getAllowedMoves(hand);
-        return allowedMoves.has(value as Move);
+        return allowedMoves.has(move);
     }
 
     private getAllowedMoves(hand: Hand): Set<Move> {
